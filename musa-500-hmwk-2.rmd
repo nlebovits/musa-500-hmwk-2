@@ -78,9 +78,6 @@ a.	State which test is used to test for normality of errors in GeoDa, and state 
 
 ## Spatial Lag and Spatial Error Regression
 
-### Tools
-List the R packages taht we're using for spatial lag and spatial error regression.
-
 ### Spatial Lag Regression
 ii.	Describe the method of spatial lag regression in several sentences. 
 1.	Present the model equation for the spatial lag model. 
@@ -111,9 +108,6 @@ a.	Indicate how you would decide which model is better based on this criterion.
 
 ## Geographically Weighted Regression
 
-### Tools
-List the R packages taht we're using for GWR
-
 ### Simpson's Paradox and Local Regression
 Introduce GWR by talking about the concepts of Simpson’s paradox and local regression.
 
@@ -135,9 +129,93 @@ Mention that the OLS assumptions still hold in GWR.
 ### GWR and P-Values
 Indicate why p-values are not part of the GWR output.
 
+## Tools
+- List packages for spatial lag & spatial error
+- List packages for GWR
+```{r, include=F}
+
+# install.packages(c("sp", "rgdal", "rgeos", "spdep", "spgwr", "spatialreg", "GWmodel"))
+
+library(tidyverse) #general
+library(sf) #spatial
+library(mapview) #quick mapping
+library(tmap) #full mapping
+library(ggpubr) #for ggarrange
+library(gt) #for tables
+library(glue) #for tables
+library(janitor) #to clean col names
+library(corrplot) #for easy correlation matrix
+library(tmap) #for choropleth maps
+library(MASS) #for stepwise regression
+library(DAAG) #for CVlm
+library(caret) #for a different attempt at cvlm
+library(stargazer) # for cleaner reg tables
+library(sp) # for spatial
+library(rgdal) # for spatial
+library(rgeos) # for spatial
+library(spdep) #for spatial lag + error reg
+library(spgwr) # for geographically weighted reg
+library(spatialreg) #for spatial lag + error reg (alt)
+library(GWmodel) # for geographically weighted reg (alt)
+```
+
+## Import and Prepare Data
+
+As in Homework #1, we are completing this assignment in R (rather than using GeoDa and ArcGIS). Once again, we will read in the original shapefile of data and transform the relevant columns to produce the initial data that we need for our analysis.
+
+```{r import}
+#Nissim
+reg_data = read_sf('C:/Users/Nissim/Desktop/Fall 2022/Spat Stats/Homeworks/ass_1_data_shp/RegressionData.shp')
+
+#Min
+#reg_data = read_sf('C:/Users/vestalk/Desktop/00_Upenn/20.Fall/03.MUSA 5000 Spatial Statistics and Data Analysis/Assignment/HW1/RegressionData.shp')
+
+#define a function to find zero values in columns
+
+# This function applies log transformations to the relevant columns. It checks whether there are zero values in each column and then applies the appropriate log transformation accordingly.
+
+col_zeros = function(a, b) {
+                  pct_col_zeros = count(subset(st_drop_geometry(a), b != 0)) |>
+                                      pull(n) / nrow(st_drop_geometry(a))
+                  return(pct_col_zeros)
+                  }
+#apply function with case_when statement
+#case_when is a vectorized function, while ifelse is not.
+#running this with ifelse will result in all row values in the mutated column being the same.
+reg_data = reg_data |>
+            mutate(
+                ln_med_h_val = case_when(col_zeros(reg_data, reg_data$MEDHVAL) == 1 ~ log(reg_data$MEDHVAL),
+                                     TRUE ~ log(1 + reg_data$MEDHVAL)),
+                   ln_pct_bach_more = case_when(col_zeros(reg_data, reg_data$PCTBACHMOR) == 1 ~ log(reg_data$PCTBACHMOR),
+                                     TRUE ~ log(1 + reg_data$PCTBACHMOR)),
+                   ln_n_bel_pov_100 = case_when(col_zeros(reg_data, reg_data$NBelPov100) == 1 ~ log(reg_data$NBelPov100),
+                                     TRUE ~ log(1 + reg_data$NBelPov100)),
+                   ln_pct_vacant = case_when(col_zeros(reg_data, reg_data$PCTVACANT) == 1 ~ log(reg_data$PCTVACANT),
+                                     TRUE ~ log(1 + reg_data$PCTVACANT)),
+                   ln_pct_singles = case_when(col_zeros(reg_data, reg_data$PCTSINGLES) == 1 ~ log(reg_data$PCTSINGLES),
+                                     TRUE ~ log(1 + reg_data$PCTSINGLES)),
+                  )
+```
+
+
 # Results
 
 ## Spatial Autocorrelation
+
+### Distribution of Median House Value
+The map below displays the spatial distribution of median house value by census tract in Philadelphia.
+```{r medhval choro}
+tmap_mode("plot")
+
+tm_shape(reg_data) + 
+  tm_polygons(title = "ln(MEDHVAL)", col = "ln_med_h_val", border.col = NA, border.alpha = 0, lwd = 0, palette = "viridis", style = "jenks") + 
+ # tm_shape(phl_city_lims) +
+#  tm_borders(col = "grey", lwd = 5) +
+  tm_compass(position = c("left", "top")) +
+  tm_layout(main.title = "Median House Values by Tract",
+            legend.position = c("right", "bottom"))
+```
+
 
 ### Global Moran's I
 Present and describe the global Moran’s I value and the random permutations test results. 
