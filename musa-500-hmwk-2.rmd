@@ -16,25 +16,292 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = T, cache = T, messages = F, warning = F, error = F)
 ```
 
-## R Markdown
+# Introduction
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## Problem & Setting
+State the problem and the setting of the analysis (Philadelphia).
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Prior Analysis
+Indicate that in the previous report, you carried out OLS regression to examine the relationship between your dependent variable and predictors (state what the DV and predictors are).
 
-```{r cars}
-summary(cars)
+## Issues with OLS
+State that OLS analysis is often inappropriate when dealing with datasets that have a spatial component
+
+## Improving on OLS
+Mention that the purpose of this report is to use spatial lag, spatial error and geographically weighted regression to see whether these methods perform better than OLS.
+
+# Methods
+
+## Spatial Autocorrelation
+A Description of the Concept of Spatial Autocorrelation  
+
+### Tobler's 1st Law
+Mention the 1st Law of Geography
+
+### Moran's I
+Talk about Moran’s I; Present and explain formula for Moran’s I
+
+### Weight Matrices
+Mention and explain the weight matrix that you’re using.
+
+1.	Indicate that throughout this report, you will be using this weight matrix.
+2.	Specify why statisticians sometimes like to use more than one spatial weight matrix in their analyses.
+
+### Significance Testing
+In your own words, talk about how you test whether the spatial autocorrelation (Moran’s I) is significant. State what hypotheses you’re testing (present the null and alternative hypotheses) and describe the random permutation process.
+
+### Local vs. Global Spatial Autocorrelation
+Briefly describe the concept of local spatial autocorrelation, without going into any of the mathematical detail.
+
+## OLS Regression and Assumptions
+
+### Overview of OLS Regression
+Begin by giving a brief (3-5 sentence) overview of OLS regression. Specifically, list the assumptions of OLS
+1.	Refer the reader to your HW 1 for more information on OLS.
+[FYI: Referring the reader to a previous HW assignment is often done in ESE 502 in order to avoid rewriting a lot of the same things over again]. 
+
+### Random Errors in Spatial Data
+ii.	State that when the data has a spatial component, the assumption that your errors are random/independent often doesn’t hold
+1.	Indicate that you can test the assumption in (ii) above by examining the spatial autocorrelation of the residuals using Moran’s I.
+2.	Indicate that another way to test OLS residuals for spatial autocorrelation is to regress them on nearby residuals (here, these nearby residuals are residuals at neighboring block groups, as defined by the Queen matrix). 
+a.	Mention rho (ρ) and how it is calculated. [It’s that term that’s known as lambda (λ) in GeoDa, and is referred to as Slope b in the statistics at the bottom of the scatterplot of OLS_RESIDU and WT_RESIDU]
+
+### Testing Other Regression Assumptions in R
+iii.	State that GeoDa, the tool that you’re using to run your OLS regression, also has a way of testing other regression assumptions. 
+1.	The first is the assumption of homoscedasticity, which is tied to the assumption of independence of errors.
+a.	State which test(s) is/are used to examine data for heteroscedasticity in GeoDa, and state the null and alternative hypotheses. 
+2.	Another assumption is that of normality of errors.
+a.	State which test is used to test for normality of errors in GeoDa, and state the null and alternative hypotheses.
+
+## Spatial Lag and Spatial Error Regression
+
+### Tools
+List the R packages taht we're using for spatial lag and spatial error regression.
+
+### Spatial Lag Regression
+ii.	Describe the method of spatial lag regression in several sentences. 
+1.	Present the model equation for the spatial lag model. 
+a.	Instead of writing X1…X4, write the names of the actual predictors that you’re using in this assignment (e.g., PCTVACANT)
+b.	Explain what each term is (the β coefficients, ρ, ε, etc)
+
+### Spatial Error Regression
+iii.	Describe the method of spatial error regression in several sentences. 
+1.	Present the model equation for the spatial error model. 
+a.	Instead of writing X1…X4, write the names of the actual predictors that you’re using in this assignment (e.g., PCTVACANT)
+b.	Explain what each term is (the β coefficients, λ, ε, u, etc)
+
+### Assumptions for Spatial Lag and Error Regression
+Indicate that the assumptions that are needed for OLS are still needed for both spatial lag and spatial error regression models (except that of spatial independence of observat
+
+### Goals of Spatial Lag and Error Regression
+State the goal of spatial lag and spatial error regression (i.e., what you hope will happen with regression residuals as a result of using these methods). 
+
+### Regression Performance Compared
+vi.	Mention that you will compare the results of spatial lag regression with OLS and the results of spatial error regression with OLS, and will decide whether the spatial models perform better than OLS based a number of criteria. 
+1.	These criteria include
+a.	Akaike Information Criterion/Schwarz Criterion;
+b.	Log Likelihood; 
+c.	Likelihood Ratio Test
+2.	Be sure to describe what each of the above criteria is, and how you decide which model is better based on this criterion (state any null/alternative hypotheses, if applicable).
+3.	State that another way of comparing OLS results with spatial lag and spatial error results is by looking at the Moran’s I of regression residuals. 
+a.	Indicate how you would decide which model is better based on this criterion.
+
+## Geographically Weighted Regression
+
+### Tools
+List the R packages taht we're using for GWR
+
+### Simpson's Paradox and Local Regression
+Introduce GWR by talking about the concepts of Simpson’s paradox and local regression.
+
+### GWR Equations
+Present the GWR equations and explain them in your own words
+
+### Running Local Regression
+Talk about how local regression is run
+
+### Bandwidth (Adaptive vs. Fixed)
+Discuss the concept of bandwidth, and talk about adaptive vs. fixed bandwidth.
+1.	State that here, you will be using adaptive bandwidth
+a.	Explain why adaptive bandwidth is more appropriate in this problem than the fixed bandwidth
+
+### Assumptions in GWR
+Mention that the OLS assumptions still hold in GWR.
+1.	When mentioning multicollinearity, talk about the Condition Number, and the issues of multicollinearity/clustering in GWR.
+
+### GWR and P-Values
+Indicate why p-values are not part of the GWR output.
+
+# Results
+
+## Spatial Autocorrelation
+
+### Global Moran's I
+Present and describe the global Moran’s I value and the random permutations test results. 
+1.	Is LNMEDHVAL significantly spatially autocorrelated? 
+```{r global moran}
+# Global Moran's I
+
+# use queen weight matrix
+# reshuffling test w 999 permutations
+# present Moran's I value, histogram of Moran's I values with all permutations, and p-value
 ```
 
-## Including Plots
+### Local Moran's I
+For Local Moran’s I results, present the Significance Map and Cluster Map obtained by running the Local Morans’ I. 
+1.	Discuss the results: what are the not significant, high-high, high-low, low-high and low-low areas on the Cluster Map? Where in the city are these areas? 
+```{r local moran}
+# Local Moran's I
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+# local Moran's I analysis with queen weight matrix; print results
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## OLS Regression and Assumptions
+
+### OLS Output
+i.	Present the OLS output from GeoDa (call this Table 1)
+1.	Give a brief 2 sentence overview of the OLS results (feel free to paste this from your description in HW 1). That is, simply indicate which predictors are significant and what % of variance in LNMEDHVAL has been explained by the model. 
+2.	Comment on the results of the tests on heteroscedasticity
+a.	Are the results from the 3 tests consistent with each other? 
+b.	Do they indicate a problem with heteroscedasticity?
+3.	Comment on the results of the test on normality of errors
+a.	Do test results indicate a problem with normality?
+```{r ols}
+# OLS Regression
+
+# Print results
+# Save residuals in new column
+# Create weighted residuals using queen matrix
+```
+
+### Scatterplot of Residuals
+ii.	Present the scatterplot of OLS_RESIDU by WT_RESIDU and describe the results.
+1.	Are the results (based on the value and significance level of ρ – that’s referred to as Slope b in the results) indicative of significant spatial autocorrelation?
+```{r ols resids}
+# Plot OLS residuals against queen neighbors
+
+# set weighted residuals are independent variable, residuals are dependent variable
+# visualize w scatterplot
+# make sure to find slope of line of best fit--this will be coefficient
+  # note that this is the same thing as running a simple regression with residuals as dependent variable and weighted resids as independent variable. The Beta coefficient of the beta residuals in that regression will be the same as the slope of this line of best fit
+```
+
+### Moran's I Scatterplot
+iii.	Present the Moran’s I scatterplot and results from the 999 permutations for OLS regression residuals.
+1.	Are you seeing significant spatial autocorrelation in your OLS residuals, and is this problematic?
+```{r moran scatter}
+# Calculate Moran's I of OLS regression residuals
+
+# test whether OLS regression residuals are spatially autocorrelated
+# check significance of Moran's I here by running 999 permutations
+# print scatterplot of results & significance test
+```
+
+## Spatial Lag and Spatial Error Regression
+
+### Spatial Lag Regression Results
+i.	Present results of Spatial Lag regression (call this Table 2)
+1.	Talk about the W_LNMEDHVAL term in the spatial lag regression output. State whether it is significant, and how the results can be interpreted.
+2.	Are the remaining terms (i.e., the predictors LNNBELPOV, PCTBACHMOR, PCTSINGLES, and PCTVACANT) in the model significant? 
+a.	Compare these results to OLS results.
+3.	State whether, based on the Breusch-Pagan test, the spatial lag regression residuals are still heteroscedastic.
+4.	Compare the Spatial Lag regression and OLS regression models based on the Akaike Information Criterion/Schwarz Criterion, the Log Likelihood, and the Likelihood Ratio Test. 
+
+```{r spatial lag}
+# Spatial Lag model
+
+# using queen weights again, calculate spatial lag for med_h_val
+# save residuals in a new column
+# also save predicted value 
+```
+
+5.	Present the Moran’s I scatterplot of spatial lag regression residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals?
+6.	Overall, which model is doing better based on all of these criteria?
+```{r spatial lag moran}
+# Moran's I for spatial lag model
+
+# once again, run moran's I for the spatial lag residuals; test w 999 permutations
+# print scatterplot & summary table of significance test
+```
+
+### Spatial Error Regression Results
+Present results of Spatial Error regression (call this Table 3)
+1.	Talk about the LAMBDA term in the spatial lag regression output. State whether it is significant, and how the results can be interpreted.
+2.	Are the remaining terms (i.e., the predictors LNNBELPOV, PCTBACHMOR, PCTSINGLES, and PCTVACANT) in the model significant? 
+a.	Compare these results to OLS results.
+3.	State whether, based on the Breusch-Pagan test, the spatial lag regression residuals are still heteroscedastic? 
+4.	Compare the Spatial Error regression and OLS regression based on the Akaike Information Criterion/Schwarz Criterion, the Log Likelihood, and the Likelihood Ratio Test. 
+
+```{r spatial error}
+# Spatial Error model
+# using queen weights again, calculate spatial error for med_h_val
+# save residuals in a new column
+# also save predicted value 
+```
+
+5.	Present the Moran’s I scatterplot of spatial error regression residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals?
+6.	Overall, which model is doing better based on all of these criteria?
+```{r spatial error moran}
+# Moran's I for spatial error model
+
+# once again, run moran's I for the spatial error residuals; test w 999 permutations
+# print scatterplot & summary table of significance test
+```
+
+### Spatial Lag vs. Spatial Error
+Compare the Spatial Lag and Spatial Error results with each other
+1.	Recall that you should not be using the likelihood-ratio test for this because the models are not nested (i.e., neither method is a special subtype of each other). However, it is OK to compare the two non-nested models, such as spatial lag and spatial error, based on Akaike Information Criterion and the Schwarz Information Criterion.
+a.	Which model has better (lower) Akaike Information Criterion and Schwarz Information Criterion values?
+
+## Geographically Weighted Regression
+
+### GWR Results
+i.	Present GWR results from the _supp table (call this Table 4)
+1.	Compare the (overall) R-squared of the GWR regression with the R-squared of the OLS regression. State which regression method seems to be doing a better job of explaining the variance in the dependent variable.
+2.	Compare the Akaike Information Criteria of GWR with those of OLS, Spatial Lag and Spatial Error models. Which model seems to be doing a better job based on that (remember, the lower the Akaike Information Criterion, the better the fit).
+```{r gwr}
+# Geographically Weighted Regression
+
+# run geographically weighted regression model uising:
+  # lnnbelpov
+  # pctbachmor
+  # pctsingles
+  # pctvacant
+# make sure to produce results as shapefile
+# kernel type should be "adaptive"; bandwidth type should be "AICc"
+# print out:
+  # supplemental table
+  # choropleth map of local R-squared values
+```
+
+### Moran's I Scatterplot of GWR Residuals
+ii.	Present the Moran’s I scatterplot of GWR residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals? What about the Spatial Lag and Spatial Error Residuals.
+```{r gwr moran}
+# Moran's I of GWR Residuals
+
+# once again, run moran's I for the GWR residuals; test w 999 permutations
+# print scatterplot & summary table of significance test
+```
+
+### Local Regression Results
+iii.	Be sure to discuss local regression results, as is done on the slides. Are there locations in the city where the relationships between each of the predictors and the dependent variable possibly significant?
+```{r local reg}
+# Local Regression Results
+
+# Follow instructions from class slides to obtain local regression results. Specifically, present maps of the ratio of the beta coefficients and the standard error estimates.
+# Use dark red when the ratio is < -2, pink when the ratio is between 0 and -2, light blue when the ratio is between 0 and 2, and dark blue when the ratio is > 2.
+```
+
+### Local R-Squared Results
+iv.	Present and discuss a choropleth map of local R-squared results. 
+
+# Discussion
+a)	In a couple sentences, recap what you did in the paper and your findings. Discuss what conclusions you can draw, and which of the four regression methods (OLS, Spatial Lag, Spatial Error, GWR) was the best, based on the results. 
+b)	Give a brief description of the limitations (i.e., which assumptions were not met).
+
+
+
+
