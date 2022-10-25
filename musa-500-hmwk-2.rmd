@@ -21,10 +21,6 @@ knitr::opts_chunk$set(echo = T, cache = T, messages = F, warning = F, error = F)
 # Introduction
 
 ## Problem & Setting
-<<<<<<< HEAD
-Same as the last project (HW 1), we continue looking at the dataset on median house value and its predictors in Philadelphia. Given the limitation of OLS regression and our model mentioned in the last report, this project aims to incorporate spatial components and explore spatial autocorrelation in our dataset.
-=======
->>>>>>> 164723082a4d6202975149bf349584db9481886f
 
 As in [our previous homework assignment](https://rpubs.com/nlebovits/musa-550-assign-1-ed-2), this study aims to examine the relationship between median house values and several neighborhood characteristics. It will establish a model for predicting median house values, with a geographic focus on Philadelphia. Earlier models of house value prediction---especially the influential HUD report, *Characteristic Prices of Housing in Fifty-Nine Metropolitan Areas*---propose a hedonic model, which has been widely adopted and which we will use here.^[Stephen Malpezzi, Larry Ozanne, and Thomas Thibodaeu, Characteristic Prices of Housing in Fifty-nine Metropolitan Areas (Washington D.C.: Department of Housing and Urban Development: 1980).]
 
@@ -81,7 +77,6 @@ Although the result of our OLS regression model was relatively acceptable for so
 Hence, this project aims to incorporate spatial components of our dataset via methods of spatial lag, spatial error, and geographically weighted regression (GWR). In the results and discussion sections, we will revisit the OLS approach from last project and make comparisons between different approaches, and suggest whether spatial lag and/or spatial error and/or GWR performs better than OLS. 
 
 
-
 # Methods
 
 ## Spatial Autocorrelation 
@@ -99,6 +94,8 @@ Talk about Moran’s I; Present and explain formula for Moran’s I
 Minwook Kang test
 
 ### Weight Matrices
+Weight Matrices consists of a $n x n$ table (given n observations in the dataset). They are useful for calculating spatial auto-correlation
+
 Mention and explain the weight matrix that you’re using.
 
 1.	Indicate that throughout this report, you will be using this weight matrix.
