@@ -429,6 +429,9 @@ iv.	Present and discuss a choropleth map of local R-squared results.
 a)	In a couple sentences, recap what you did in the paper and your findings. Discuss what conclusions you can draw, and which of the four regression methods (OLS, Spatial Lag, Spatial Error, GWR) was the best, based on the results. 
 b)	Give a brief description of the limitations (i.e., which assumptions were not met).
 
-
-
+# Citations
+```{r citation lolz}
+url = "https://www.smbc-comics.com/comics/1618931828-20210420.png"
+```
+<center><img src="`r url`"></center>
 
