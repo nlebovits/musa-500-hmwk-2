@@ -22,14 +22,50 @@ knitr::opts_chunk$set(echo = T, cache = T, messages = F, warning = F, error = F)
 # Introduction
 
 ## Problem & Setting
-State the problem and the setting of the analysis (Philadelphia).
 
-```{r tweet embed, echo = F}
-library(tweetrmd)
+As in [our previous homework assignment](https://rpubs.com/nlebovits/musa-550-assign-1-ed-2), this study aims to examine the relationship between median house values and several neighborhood characteristics. It will establish a model for predicting median house values, with a geographic focus on Philadelphia. Earlier models of house value prediction---especially the influential HUD report, *Characteristic Prices of Housing in Fifty-Nine Metropolitan Areas*---propose a hedonic model, which has been widely adopted and which we will use here.^[Stephen Malpezzi, Larry Ozanne, and Thomas Thibodaeu, Characteristic Prices of Housing in Fifty-nine Metropolitan Areas (Washington D.C.: Department of Housing and Urban Development: 1980).]
 
-tweetrmd::tweet_embed("https://twitter.com/schumacherbj/status/1584278266546130944",
-                      widget_type = "video")
-```
+$$R = f (S, N, C, t)$$ where
+
+$R =$ rent or value, 
+
+$S =$ structural characteristics, 
+
+$N =$ neighborhood characteristics (including location),
+
+$C =$ contract conditions (implicit and explicit), and
+
+$t =$ time trend (accounting for inflation over time).
+
+In a subsequent study that looks at Place-to-place Housing Price Indexes
+and their determinants, the researchers utilized the log-linear form of
+the hedonic model,^[Stephen Malpezzi,  Gregory H. Chun, and Richard K. Green, “New Place-to-Place Housing Price Indexes for U.S. Metropolitan Areas, and Their Determinants,” Real Estate Economics 26, No. 2 (1998): 235-274. https://doi-org.proxy.library.upenn.edu/10.1111/1540-6229.00745] expressed as:
+
+$$\ln R = \beta_0 + S\beta_1 + N\beta_2 + L\beta_3 + C\beta_4 + \epsilon $$ where
+
+$\ln R =$ the natural log of rent, 
+
+$R, S, N, C =$ same as above,
+
+$\beta_i =$ the hedonic regression coefficient, and 
+
+$\epsilon$ = the residuals.
+
+\
+Since the researchers mentioned "four appealing characteristics" of the log-linear form, including mitigating a common form of heteroskedasticity,^[Malpezzi, Chun, and Green, “Place-to-Place Housing Price Index,” 238.] our study will also use the logarithmic transformation of some variables. 
+
+\
+Both studies identified and categorized structural, neighborhood, and contract characteristics as three separate groups. Nonetheless, the analysis primarily focused on the structural characteristics (e.g., the number of bedrooms) and oversimplified the variables in neighborhood characteristics (i.e., using a generic subjective rating of how "good" a neighborhood is instead of using more objective parameters). Given that previous studies largely focused on structural characteristics, we will adopt similar regression models to explore four neighborhood characteristics that were previously overlooked: 
+
+1)  the percentage of individuals with Bachelor's degrees or higher, 
+
+2)  the percentage of vacant houses, 
+
+3)  the number of households living in poverty, and 
+
+4)  the percentage of single family housing units.
+
+In [our previous homework assignment](https://rpubs.com/nlebovits/musa-550-assign-1-ed-2), we found that the map of standardized residuals showed signs of spatial autocorrelation, which undermined the viability of our OLS regression model. In this assignment, we attempt to account for the influence of spatial autocorrelation by by using various spatial regression techniques, including spatial lag, spatial error, and geographically weighted regression.
 
 ## Prior Analysis
 Indicate that in the previous report, you carried out OLS regression to examine the relationship between your dependent variable and predictors (state what the DV and predictors are).
@@ -88,6 +124,15 @@ a.	State which test is used to test for normality of errors in GeoDa, and state 
 ### Spatial Lag Regression
 ii.	Describe the method of spatial lag regression in several sentences. 
 1.	Present the model equation for the spatial lag model. 
+
+In simpler terms, we can understand spatial lag through the analogy of this Stats Wizard Penguin (SWP) and his Inept Companions (ICs): although the SWP may have a stats wizardry quotient (SWQ) of over 9,000, its spatial lag (i.e., the average value of the SWQs of its neighboring ICs) is 0 because all the neighboring penguins know exactly 0 about statistics. (Crucially, we should use a symmetrical matrix of statistically incompetent penguins, as this is a key requirement of spatial lag and spatial error regressions).
+```{r tweet embed, echo = F}
+library(tweetrmd)
+
+tweetrmd::tweet_embed("https://twitter.com/schumacherbj/status/1584278266546130944",
+                      widget_type = "video")
+```
+
 a.	Instead of writing X1…X4, write the names of the actual predictors that you’re using in this assignment (e.g., PCTVACANT)
 b.	Explain what each term is (the β coefficients, ρ, ε, etc)
 
@@ -230,11 +275,11 @@ tm_shape(reg_data) +
 ### Global Moran's I
 Present and describe the global Moran’s I value and the random permutations test results.
 
-Here, we'll prepare a weight matrix based on Queen neighbors.^[This analysis is based on [Data Analysis and Visualization with R:Spatial (2022)](http://www.geo.hunter.cuny.edu/~ssun/R-Spatial/)] We can do this using the `spdep` package; `spdep::poly2nd` produces neighboring relations and then `spdep:nb2listw` converts them to a weight matrix. 
+Here, we'll prepare a weight matrix based on Queen neighbors.^[This analysis is based on [Data Analysis and Visualization with R:Spatial (2022)](http://www.geo.hunter.cuny.edu/~ssun/R-Spatial/)] We can do this using the `spdep` package; `spdep::poly2nd` produces neighboring relations and then `spdep::nb2listw` converts them to a weight matrix. 
 ```{r queen weights}
 # create our queen weight matrix
 reg_data_wtmatrix = reg_data |>
-                      spdep::poly2nb(row.names = reg_data$POLY_ID, queen = TRUE)
+                      spdep::poly2nb(row.names = reg_data$POLY_ID)
 
 summary(reg_data_wtmatrix)
 ```
@@ -254,14 +299,42 @@ moran(reg_data$MEDHVAL,
 ```
 
 ```{r global moran map}
+
+plot = reg_data |>
+       dplyr::select(MEDHVAL)
+
+#plot links
+plot(plot, 
+     col= NA, lwd=1)
+xy<-st_coordinates(st_centroid(plot))
+par(mfrow=c(1,1)) 
+plot(reg_data_wtmatrix, xy, col='red', lwd = 2) , add = TRUE)
+title(main='Contiguous Queen Neighbours')
+
+
+
+
+update.packages(c("sf", "raster", "rgdal", "sp"))
+
+reg_data = reg_data |>
+            st_set_crs("EPSG:4326")
+
+coords = st_coordinates(reg_data)
+
+reg_data_glob_moran_net = nb2lines(reg_data_wtmatrix, coords = coords)
+
+crs = st_crs(reg_data)
+
+reg_data_glob_moran_net = reg_data_glob_moran_net |>
+                            st_as_sf(crs = st_crs("EPSG:4326"))
+
+
 tm_shape(reg_data) + 
   tm_borders(col = "grey", lwd = 0.5) + 
 tm_shape(reg_data) +
-  tm_dots() 
-
-
-# tm_shape(st_as_sf(reg_data_wtmatrix)) +
-#  tm_lines(col = "red")
+  tm_dots() +
+tm_shape(reg_data_glob_moran_net) +
+  tm_lines(col = "red")
  # tm_shape(phl_city_lims) +
 #  tm_borders(col = "grey", lwd = 5) +
 #  tm_compass(position = c("left", "top")) +

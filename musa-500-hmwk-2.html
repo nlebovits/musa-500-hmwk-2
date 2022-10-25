@@ -1693,9 +1693,65 @@ div.tocify {
 <div id="problem-setting" class="section level2" number="1.1">
 <h2><span class="header-section-number">1.1</span> Problem &amp;
 Setting</h2>
-<p>State the problem and the setting of the analysis (Philadelphia).</p>
-<blockquote class="twitter-video" data-lang="en"><p lang="en" dir="ltr">The one person in the lab who really knows statistics <a href="https://t.co/dmLbkXG7mN">pic.twitter.com/dmLbkXG7mN</a></p>— Björn Schumacher (@schumacherbj) <a href="https://twitter.com/schumacherbj/status/1584278266546130944?ref_src=twsrc%5Etfw">October 23, 2022</a></blockquote>
-
+<p>As in <a href="https://rpubs.com/nlebovits/musa-550-assign-1-ed-2">our previous
+homework assignment</a>, this study aims to examine the relationship
+between median house values and several neighborhood characteristics. It
+will establish a model for predicting median house values, with a
+geographic focus on Philadelphia. Earlier models of house value
+prediction—especially the influential HUD report, <em>Characteristic
+Prices of Housing in Fifty-Nine Metropolitan Areas</em>—propose a
+hedonic model, which has been widely adopted and which we will use
+here.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<p><span class="math display">\[R = f (S, N, C, t)\]</span> where</p>
+<p><span class="math inline">\(R =\)</span> rent or value,</p>
+<p><span class="math inline">\(S =\)</span> structural
+characteristics,</p>
+<p><span class="math inline">\(N =\)</span> neighborhood characteristics
+(including location),</p>
+<p><span class="math inline">\(C =\)</span> contract conditions
+(implicit and explicit), and</p>
+<p><span class="math inline">\(t =\)</span> time trend (accounting for
+inflation over time).</p>
+<p>In a subsequent study that looks at Place-to-place Housing Price
+Indexes and their determinants, the researchers utilized the log-linear
+form of the hedonic model,<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> expressed as:</p>
+<p><span class="math display">\[\ln R = \beta_0 + S\beta_1 + N\beta_2 +
+L\beta_3 + C\beta_4 + \epsilon \]</span> where</p>
+<p><span class="math inline">\(\ln R =\)</span> the natural log of
+rent,</p>
+<p><span class="math inline">\(R, S, N, C =\)</span> same as above,</p>
+<p><span class="math inline">\(\beta_i =\)</span> the hedonic regression
+coefficient, and</p>
+<p><span class="math inline">\(\epsilon\)</span> = the residuals.</p>
+<p><br />
+Since the researchers mentioned “four appealing characteristics” of the
+log-linear form, including mitigating a common form of
+heteroskedasticity,<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a> our study will also use the logarithmic
+transformation of some variables.</p>
+<p><br />
+Both studies identified and categorized structural, neighborhood, and
+contract characteristics as three separate groups. Nonetheless, the
+analysis primarily focused on the structural characteristics (e.g., the
+number of bedrooms) and oversimplified the variables in neighborhood
+characteristics (i.e., using a generic subjective rating of how “good” a
+neighborhood is instead of using more objective parameters). Given that
+previous studies largely focused on structural characteristics, we will
+adopt similar regression models to explore four neighborhood
+characteristics that were previously overlooked:</p>
+<ol style="list-style-type: decimal">
+<li><p>the percentage of individuals with Bachelor’s degrees or
+higher,</p></li>
+<li><p>the percentage of vacant houses,</p></li>
+<li><p>the number of households living in poverty, and</p></li>
+<li><p>the percentage of single family housing units.</p></li>
+</ol>
+<p>In <a href="https://rpubs.com/nlebovits/musa-550-assign-1-ed-2">our
+previous homework assignment</a>, we found that the map of standardized
+residuals showed signs of spatial autocorrelation, which undermined the
+viability of our OLS regression model. In this assignment, we attempt to
+account for the influence of spatial autocorrelation by by using various
+spatial regression techniques, including spatial lag, spatial error, and
+geographically weighted regression.</p>
 </div>
 <div id="prior-analysis" class="section level2" number="1.2">
 <h2><span class="header-section-number">1.2</span> Prior Analysis</h2>
@@ -1828,6 +1884,16 @@ sentences.</li>
 <ol style="list-style-type: decimal">
 <li>Present the model equation for the spatial lag model.</li>
 </ol>
+<p>In simpler terms, we can understand spatial lag through the analogy
+of this Stats Wizard Penguin (SWP) and his Inept Companions (ICs):
+although the SWP may have a stats wizardry quotient (SWQ) of over 9,000,
+its spatial lag (i.e., the average value of the SWQs of its neighboring
+ICs) is 0 because all the neighboring penguins know exactly 0 about
+statistics. (Crucially, we should use a symmetrical matrix of
+statistically incompetent penguins, as this is a key requirement of
+spatial lag and spatial error regressions).</p>
+<blockquote class="twitter-video" data-lang="en"><p lang="en" dir="ltr">The one person in the lab who really knows statistics <a href="https://t.co/dmLbkXG7mN">pic.twitter.com/dmLbkXG7mN</a></p>— Björn Schumacher (@schumacherbj) <a href="https://twitter.com/schumacherbj/status/1584278266546130944?ref_src=twsrc%5Etfw">October 23, 2022</a></blockquote>
+
 <ol style="list-style-type: lower-alpha">
 <li>Instead of writing X1…X4, write the names of the actual predictors
 that you’re using in this assignment (e.g., PCTVACANT)</li>
@@ -2007,9 +2073,9 @@ by census tract in Philadelphia.</p>
 I</h3>
 <p>Present and describe the global Moran’s I value and the random
 permutations test results.</p>
-<p>Here, we’ll prepare a weight matrix based on Queen neighbors.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> We can do
+<p>Here, we’ll prepare a weight matrix based on Queen neighbors.<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a> We can do
 this using the <code>spdep</code> package; <code>spdep::poly2nd</code>
-produces neighboring relations and then <code>spdep:nb2listw</code>
+produces neighboring relations and then <code>spdep::nb2listw</code>
 converts them to a weight matrix.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create our queen weight matrix</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>reg_data_wtmatrix <span class="ot">=</span> reg_data <span class="sc">|&gt;</span></span>
@@ -2313,8 +2379,17 @@ were not met).</li>
 <div class="footnotes footnotes-end-of-document">
 <hr />
 <ol>
-<li id="fn1"><p>This analysis is based on <a href="http://www.geo.hunter.cuny.edu/~ssun/R-Spatial/">Data Analysis and
-Visualization with R:Spatial (2022)</a><a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+<li id="fn1"><p>Stephen Malpezzi, Larry Ozanne, and Thomas Thibodaeu,
+Characteristic Prices of Housing in Fifty-nine Metropolitan Areas
+(Washington D.C.: Department of Housing and Urban Development: 1980).<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+<li id="fn2"><p>Stephen Malpezzi, Gregory H. Chun, and Richard K. Green,
+“New Place-to-Place Housing Price Indexes for U.S. Metropolitan Areas,
+and Their Determinants,” Real Estate Economics 26, No. 2 (1998):
+235-274. <a href="https://doi-org.proxy.library.upenn.edu/10.1111/1540-6229.00745" class="uri">https://doi-org.proxy.library.upenn.edu/10.1111/1540-6229.00745</a><a href="#fnref2" class="footnote-back">↩︎</a></p></li>
+<li id="fn3"><p>Malpezzi, Chun, and Green, “Place-to-Place Housing Price
+Index,” 238.<a href="#fnref3" class="footnote-back">↩︎</a></p></li>
+<li id="fn4"><p>This analysis is based on <a href="http://www.geo.hunter.cuny.edu/~ssun/R-Spatial/">Data Analysis and
+Visualization with R:Spatial (2022)</a><a href="#fnref4" class="footnote-back">↩︎</a></p></li>
 </ol>
 </div>
 
