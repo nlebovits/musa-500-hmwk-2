@@ -24,6 +24,13 @@ knitr::opts_chunk$set(echo = T, cache = T, messages = F, warning = F, error = F)
 ## Problem & Setting
 State the problem and the setting of the analysis (Philadelphia).
 
+```{r tweet embed, echo = F}
+library(tweetrmd)
+
+tweetrmd::tweet_embed("https://twitter.com/schumacherbj/status/1584278266546130944",
+                      widget_type = "video")
+```
+
 ## Prior Analysis
 Indicate that in the previous report, you carried out OLS regression to examine the relationship between your dependent variable and predictors (state what the DV and predictors are).
 
@@ -135,6 +142,8 @@ Indicate why p-values are not part of the GWR output.
 ```{r, include=F}
 
 # install.packages(c("sp", "rgdal", "rgeos", "spdep", "spgwr", "spatialreg", "GWmodel"))
+#install.packages("remotes")
+#remotes::install_github("gadenbuie/tweetrmd")
 
 library(tidyverse) #general
 library(sf) #spatial
@@ -157,6 +166,7 @@ library(spdep) #for spatial lag + error reg
 library(spgwr) # for geographically weighted reg
 library(spatialreg) #for spatial lag + error reg (alt)
 library(GWmodel) # for geographically weighted reg (alt)
+library(tweetrmd) # to embed a tweet
 ```
 
 ## Import and Prepare Data
@@ -218,12 +228,51 @@ tm_shape(reg_data) +
 
 
 ### Global Moran's I
-Present and describe the global Moran’s I value and the random permutations test results. 
-1.	Is LNMEDHVAL significantly spatially autocorrelated? 
+Present and describe the global Moran’s I value and the random permutations test results.
+
+Here, we'll prepare a weight matrix based on Queen neighbors.^[This analysis is based on [Data Analysis and Visualization with R:Spatial (2022)](http://www.geo.hunter.cuny.edu/~ssun/R-Spatial/)] We can do this using the `spdep` package; `spdep::poly2nd` produces neighboring relations and then `spdep:nb2listw` converts them to a weight matrix. 
+```{r queen weights}
+# create our queen weight matrix
+reg_data_wtmatrix = reg_data |>
+                      spdep::poly2nb(row.names = reg_data$POLY_ID, queen = TRUE)
+
+summary(reg_data_wtmatrix)
+```
+
 ```{r global moran}
 # Global Moran's I
 
-# use queen weight matrix
+# now use that weight matrix to calculate global moran's i for MEDHVAL
+# zero.policy = TRUE allows zero-length weight vectors
+reg_data_wtmatrix_listw = reg_data_wtmatrix |>
+                              spdep::nb2listw(style = "W", zero.policy = TRUE)
+
+moran(reg_data$MEDHVAL, 
+      reg_data_wtmatrix_listw, 
+      n = length(reg_data_wtmatrix_listw$neighbours), 
+      S0 = Szero(reg_data_wtmatrix_listw))$`I`
+```
+
+```{r global moran map}
+tm_shape(reg_data) + 
+  tm_borders(col = "grey", lwd = 0.5) + 
+tm_shape(reg_data) +
+  tm_dots() 
+
+
+# tm_shape(st_as_sf(reg_data_wtmatrix)) +
+#  tm_lines(col = "red")
+ # tm_shape(phl_city_lims) +
+#  tm_borders(col = "grey", lwd = 5) +
+#  tm_compass(position = c("left", "top")) +
+#  tm_layout(main.title = "Median House Values by Tract",
+#            legend.position = c("right", "bottom"))
+
+```
+
+1.	Is LNMEDHVAL significantly spatially autocorrelated? 
+```{r global moran test}
+
 # reshuffling test w 999 permutations
 # present Moran's I value, histogram of Moran's I values with all permutations, and p-value
 ```
