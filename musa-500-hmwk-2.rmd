@@ -292,10 +292,7 @@ summary(reg_data_wtmatrix)
 reg_data_wtmatrix_listw = reg_data_wtmatrix |>
                               spdep::nb2listw(style = "W", zero.policy = TRUE)
 
-moran(reg_data$MEDHVAL, 
-      reg_data_wtmatrix_listw, 
-      n = length(reg_data_wtmatrix_listw$neighbours), 
-      S0 = Szero(reg_data_wtmatrix_listw))$`I`
+spdep::moran.test(reg_data$LNMEDINC, reg_data_wtmatrix_listw)
 ```
 
 ```{r global moran map}
@@ -303,7 +300,7 @@ moran(reg_data$MEDHVAL,
 plot = reg_data |>
        dplyr::select(MEDHVAL)
 
-#plot links
+plot links
 plot(plot, 
      col= NA, lwd=1)
 xy<-st_coordinates(st_centroid(plot))
@@ -314,7 +311,7 @@ title(main='Contiguous Queen Neighbours')
 
 
 
-update.packages(c("sf", "raster", "rgdal", "sp"))
+# update.packages(c("sf", "raster", "rgdal", "sp"))
 
 reg_data = reg_data |>
             st_set_crs("EPSG:4326")
@@ -326,7 +323,7 @@ reg_data_glob_moran_net = nb2lines(reg_data_wtmatrix, coords = coords)
 crs = st_crs(reg_data)
 
 reg_data_glob_moran_net = reg_data_glob_moran_net |>
-                            st_as_sf(crs = st_crs("EPSG:4326"))
+                            st_as_sf(crs = crs)
 
 
 tm_shape(reg_data) + 
@@ -343,11 +340,36 @@ tm_shape(reg_data_glob_moran_net) +
 
 ```
 
-1.	Is LNMEDHVAL significantly spatially autocorrelated? 
+1.	Is LNMEDHVAL significantly spatially autocorrelated?
+
+Here we use a Monte Carlo approach to test whether our global Moran's I is statistically significant. If the null hypothesis is true, then the probability of drawing the observed data is the same as any other permutation of the zi’s amongst the polygons. Thus, if m just the number if simulated Moran’s-I values exceeding the observed one, and M is the total number of simulations, then the probability of getting the observed Moran’s-I
+
+or a greater one is
+
+$p = m+1 / M+1$
+
+We can run this test using `moran.mc` in the `spdep` package.
 ```{r global moran test}
 
 # reshuffling test w 999 permutations
 # present Moran's I value, histogram of Moran's I values with all permutations, and p-value
+
+moranMC = spdep::moran.mc(reg_data$LNMEDINC, reg_data_wtmatrix_listw, 999)
+
+moranMC
+```
+
+```{r global moran hist}
+moranMCres<-moranMC$res
+hist(moranMCres, freq=10000000, nclass=100)   #Draws distribution of Moran's I's calculated from randomly permuted values
+# Here, we draw a red vertical line at the observed value of our Moran's I
+abline(v=moran(reg_data$LNMEDHHINC, reg_data_wtmatrix_listw, n=length(reg_data_wtmatrix_listw$neighbours), S0=Szero(reg_data_wtmatrix_listw))$`I`, col='red')
+```
+
+```{r global moran plot}
+moran.plot(reg_data$LNMEDINC, reg_data_wtmatrix_listw,
+           xlab = 
+            ylab = )
 ```
 
 ### Local Moran's I
@@ -357,6 +379,10 @@ For Local Moran’s I results, present the Significance Map and Cluster Map obta
 # Local Moran's I
 
 # local Moran's I analysis with queen weight matrix; print results
+
+lisa = localmoran(reg_data$LNMEDINC, reg_data_wtmatrix_listw)
+
+head(lisa)
 ```
 
 ## OLS Regression and Assumptions
