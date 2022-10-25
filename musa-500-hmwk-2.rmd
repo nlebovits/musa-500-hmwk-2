@@ -14,7 +14,6 @@ editor_options:
   markdown: 
     wrap: 72
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = T, cache = T, messages = F, warning = F, error = F)
 ```
@@ -22,7 +21,7 @@ knitr::opts_chunk$set(echo = T, cache = T, messages = F, warning = F, error = F)
 # Introduction
 
 ## Problem & Setting
-State the problem and the setting of the analysis (Philadelphia).
+Same as the last project (HW 1), we continue looking at the dataset on median house value and its predictors in Philadelphia. Given the limitation of OLS regression and our model mentioned in the last report, this project aims to incorporate spatial components and explore spatial autocorrelation in our dataset.
 
 ```{r tweet embed, echo = F}
 library(tweetrmd)
@@ -32,21 +31,26 @@ tweetrmd::tweet_embed("https://twitter.com/schumacherbj/status/15842782665461309
 ```
 
 ## Prior Analysis
-Indicate that in the previous report, you carried out OLS regression to examine the relationship between your dependent variable and predictors (state what the DV and predictors are).
+In HW 1, we utilized OLS (ordinary least sqaures) regression to build a model looking at the relationship between a dependent variable (log-transformed median house values) and four predictors (percentage pf vacant house, percentage of single family house, percentage of residents holding a Bachelor or higher degree, and log-transformed poverty rate). 
+
 
 ## Issues with OLS
-State that OLS analysis is often inappropriate when dealing with datasets that have a spatial component
+Although the result of our OLS regression model was relatively acceptable for social science research, it inevitably suffered from OLS regression's incapability dealing with the spatial component of our dataset . Given the geographic nature of house price data, taking sptial elements into consideration may largely improve our model. 
 
 ## Improving on OLS
-Mention that the purpose of this report is to use spatial lag, spatial error and geographically weighted regression to see whether these methods perform better than OLS.
+Hence, this project aims to incorporate spatial components of our dataset via methods of spatial lag, spatial error, and geographically weighted regression (GWR). In the results and discussion sections, we will revisit the OLS approach from last project and make comparisons between different approaches, and suggest whether spatial lag and/or spatial error and/or GWR performs better than OLS. 
+
+
 
 # Methods
 
-## Spatial Autocorrelation
-A Description of the Concept of Spatial Autocorrelation  
+## Spatial Autocorrelation 
+Spatial autocorrelation looks at how one observation of a variable at one location vary from another observation at a nearby location, in other words, the relationship of values of a single variable at neighboring locations. A positive spatial autocorrelation suggests more similar values at locations that are closer by, while negative spatial autocorrelation suggests observations at closer locations show values that are more different. 
+
+Spatial Autocorrelation is guided by and based on the premise of Tobler's 1st Law of Geography. 
 
 ### Tobler's 1st Law
-Mention the 1st Law of Geography
+As one of the most influential work, Waldo Tobler proposed the First Law of Geography in 1970. The law states that, "everything is related to everything else, but near things are more related than distant things." Because of this potential association between values of a variable and their locations, spatial statistics and autocorrelation should be taken into consideration into models. 
 
 ### Moran's I
 Talk about Moran’s I; Present and explain formula for Moran’s I
@@ -56,6 +60,8 @@ Mention and explain the weight matrix that you’re using.
 
 1.	Indicate that throughout this report, you will be using this weight matrix.
 2.	Specify why statisticians sometimes like to use more than one spatial weight matrix in their analyses.
+
+Queen Weight Matrix 
 
 ### Significance Testing
 In your own words, talk about how you test whether the spatial autocorrelation (Moran’s I) is significant. State what hypotheses you’re testing (present the null and alternative hypotheses) and describe the random permutation process.
