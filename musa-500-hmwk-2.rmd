@@ -95,6 +95,9 @@ As one of the most influential work, Waldo Tobler proposed the First Law of Geog
 ### Moran's I
 Talk about Moran’s I; Present and explain formula for Moran’s I
 
+
+Minwook Kang test
+
 ### Weight Matrices
 Mention and explain the weight matrix that you’re using.
 
