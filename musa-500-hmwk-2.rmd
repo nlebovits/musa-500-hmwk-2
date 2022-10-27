@@ -320,7 +320,8 @@ tm_shape(reg_data) +
 #  tm_borders(col = "grey", lwd = 5) +
   tm_compass(position = c("left", "top")) +
   tm_layout(main.title = "Median House Values by Tract",
-            legend.position = c("right", "bottom"))
+            legend.position = c("right", "bottom"),
+            frame = FALSE)
 ```
 
 
@@ -345,14 +346,7 @@ reg_data = reg_data |>
 summary(reg_data$nb)
 ```
 
-```{r global moran}
-# Global Moran's I
-
-# now use that weight matrix to calculate global moran's i for MEDHVAL
-
-global_moran(reg_data$LNMEDINC, reg_data$nb, reg_data$weights)$`I`
-```
-
+We can visualize the connections between neighbors based on the weight matrix that we've connected. Here's what they look like:
 ```{r global moran map}
 
 # install.packages("sfnetworks")
@@ -372,18 +366,25 @@ tm_shape(reg_data) +
 tm_shape(reg_data) +
   tm_dots() +
 tm_shape(reg_data_lines) +
-  tm_lines(col = "red")
+  tm_lines(col = "red") +
+tm_layout(frame = FALSE)
 ```
 
-1.	Is LNMEDHVAL significantly spatially autocorrelated?
+Now we can apply the weight matrix that to calculate the global Moran's I.
+```{r global moran}
+# Global Moran's I
 
-Here we use a Monte Carlo approach to test whether our global Moran's I is statistically significant. If the null hypothesis is true, then the probability of drawing the observed data is the same as any other permutation of the zi’s amongst the polygons. Thus, if m just the number if simulated Moran’s-I values exceeding the observed one, and M is the total number of simulations, then the probability of getting the observed Moran’s-I
+# now use that weight matrix to calculate global moran's i for MEDHVAL
+
+global_moran(reg_data$LNMEDINC, reg_data$nb, reg_data$weights)$`I`
+```
+
+Having calculated a global Moran's I, we'll use a Monte Carlo approach to test whether our global Moran's I is statistically significant. If the null hypothesis is true, then the probability of drawing the observed data is the same as any other permutation of the zi’s amongst the polygons. Thus, if m just the number if simulated Moran’s-I values exceeding the observed one, and M is the total number of simulations, then the probability of getting the observed Moran’s-I
 
 or a greater one is
 
 $p = m+1 / M+1$
 
-We can run this test using `moran.mc` in the `spdep` package.
 ```{r global moran test}
 
 # reshuffling test w 999 permutations
@@ -394,6 +395,7 @@ moranMC = global_moran_perm(reg_data$LNMEDINC, reg_data$nb, reg_data$weights, al
 moranMC
 ```
 
+Here we visualize the randomly permuted values from the Monte Carlo test. We can see that the calculated global Moran's I is far higher than the distribution of the random values. In fact, it is the highest (observed rank = 1000). It's p-value is < 0.001 and we can therefore reject the null hypothesis.
 ```{r global moran hist}
 #draws a histogram of our randomly permuted values
 # and adds a red line for our actual moran's i
@@ -413,6 +415,7 @@ ggplot(moranMCres) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
+Additional confirmation of the significance of our Moran's I value can be found by plotting the relationship between LNMEDINC of the block groups and their neighbors. If there were no relationship between block group observations and those of their neighbors, we would not see a clear pattern in the plot below. However, we observe that this is not the case.
 ```{r global moran plot}
 moran.plot(reg_data$LNMEDINC, nb2listw(reg_data$nb),
            xlab = "ln(MEDHINC)", 
@@ -420,6 +423,8 @@ moran.plot(reg_data$LNMEDINC, nb2listw(reg_data$nb),
 ```
 
 ### Local Moran's I
+The `local_moran` function in `sfdep` allows us to compute LISA statistics for each block group. This function generates the Local Moran statistic as `Ii`. We might also be interested in `Var.Ii`, which tells us how much each block group’s Local Moran Statistic varies from the global mean, and $Pr(z>0)$, which indicates whether the Local Moran Statistic can be considered statistically significant.
+
 For Local Moran’s I results, present the Significance Map and Cluster Map obtained by running the Local Morans’ I. 
 1.	Discuss the results: what are the not significant, high-high, high-low, low-high and low-low areas on the Cluster Map? Where in the city are these areas? 
 ```{r local moran}
@@ -430,6 +435,48 @@ For Local Moran’s I results, present the Significance Map and Cluster Map obta
 lisa = local_moran(reg_data$LNMEDINC, reg_data$nb, reg_data$weights, nsim = 999)
 
 head(lisa)
+
+lisa_ii = localmoran_perm(reg_data$LNMEDINC, nb2listw(reg_data$nb), nsim = 999)
+```
+
+Now we can examine the local Moran's I values to see if there is significant spatial autocorrelation.
+```{r local moran map}
+# first we need to bind the lisa dataframe to our reg_data dataframe
+
+reg_data = cbind(reg_data, lisa)
+
+tm_shape(reg_data) +
+  tm_fill(style = "fixed", 
+          col = "p_ii", 
+          breaks = c(0,0.001, 0.01, 0.05, 1), 
+          palette = '-viridis',
+          title = "P-Value") +
+  #tm_borders(col = "white",
+   #          lwd = 0.05) +
+  tm_layout(frame = FALSE, main.title = "P-Value")
+```
+
+We can also visualize whether the LISA statistics suggest high or low clustering. [Ugh, fix this wording plz.]
+
+```{r local moran clustering}
+
+reg_data = reg_data |>
+            mutate(
+                  mean = as.character(mean),
+                  lisa_map = case_when(
+                                  ii > 0.5 ~ mean,
+                                  ii < -0.05 ~ mean,
+                                  TRUE ~ "insignificant"
+                                )
+                  )
+
+
+pal = c("red", "pink", "grey", "lightblue", "blue")
+
+tm_shape(reg_data) +
+  tm_fill(col = "lisa_map", palette = pal)+
+  tm_layout(frame = FALSE)
+
 ```
 
 ## OLS Regression and Assumptions
