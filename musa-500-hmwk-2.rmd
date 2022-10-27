@@ -200,6 +200,9 @@ Indicate why p-values are not part of the GWR output.
 #install.packages("remotes")
 #remotes::install_github("gadenbuie/tweetrmd")
 
+#remove.packages("rlang")
+#install.packages("rlang")
+
 library(tidyverse) #general
 library(sf) #spatial
 library(mapview) #quick mapping
@@ -222,6 +225,7 @@ library(spgwr) # for geographically weighted reg
 library(spatialreg) #for spatial lag + error reg (alt)
 library(GWmodel) # for geographically weighted reg (alt)
 library(tweetrmd) # to embed a tweet
+library(sfdep) # for sf replacement of spdep
 ```
 
 ## Import and Prepare Data
@@ -229,8 +233,7 @@ library(tweetrmd) # to embed a tweet
 As in Homework #1, we are completing this assignment in R (rather than using GeoDa and ArcGIS). Once again, we will read in the original shapefile of data and transform the relevant columns to produce the initial data that we need for our analysis.
 
 ```{r import}
-#Nissim
-reg_data = read_sf('C:/Users/Nissim/Desktop/Fall 2022/Spat Stats/Homeworks/ass_1_data_shp/RegressionData.shp')
+reg_data = st_read('C:/Users/Nissim/Desktop/Fall 2022/Spat Stats/musa-500-hmwk-2/reg_data_files/Regression Data.shp')
 
 #Min
 #reg_data = read_sf('C:/Users/vestalk/Desktop/00_Upenn/20.Fall/03.MUSA 5000 Spatial Statistics and Data Analysis/Assignment/HW1/RegressionData.shp')
@@ -273,7 +276,7 @@ The map below displays the spatial distribution of median house value by census 
 tmap_mode("plot")
 
 tm_shape(reg_data) + 
-  tm_polygons(title = "ln(MEDHVAL)", col = "ln_med_h_val", border.col = NA, border.alpha = 0, lwd = 0, palette = "viridis", style = "jenks") + 
+  tm_polygons(title = "ln(MEDHVAL)", col = "LNMEDHVAL", border.col = NA, border.alpha = 0, lwd = 0, palette = "viridis", style = "jenks") + 
  # tm_shape(phl_city_lims) +
 #  tm_borders(col = "grey", lwd = 5) +
   tm_compass(position = c("left", "top")) +
@@ -286,68 +289,51 @@ tm_shape(reg_data) +
 Present and describe the global Moran’s I value and the random permutations test results.
 
 Here, we'll prepare a weight matrix based on Queen neighbors.^[This analysis is based on [Data Analysis and Visualization with R:Spatial (2022)](http://www.geo.hunter.cuny.edu/~ssun/R-Spatial/)] We can do this using the `spdep` package; `spdep::poly2nd` produces neighboring relations and then `spdep::nb2listw` converts them to a weight matrix. 
-```{r queen weights}
-# create our queen weight matrix
-reg_data_wtmatrix = reg_data |>
-                      spdep::poly2nb(row.names = reg_data$POLY_ID)
 
-summary(reg_data_wtmatrix)
+Here we're using the `sfdep` package (rather than `spdep`), as we prefer working with `sf` objects to `sp` objects. Documentation is [available here](https://sfdep.josiahparry.com/).
+```{r queen weights}
+
+# create our queen weight matrix
+# reg_data_nb = reg_data |>
+        #              spdep::poly2nb(row.names = reg_data$POLY_ID)
+
+# grab geometry
+reg_data = reg_data |>
+              mutate(nb_geom = st_geometry(reg_data), #geoms for poly2nb
+                     nb = st_contiguity(nb_geom), # generate neighbors
+                     weights = st_weights(nb)) # weight matrices from neighbors
+
+summary(reg_data$nb)
 ```
 
 ```{r global moran}
 # Global Moran's I
 
 # now use that weight matrix to calculate global moran's i for MEDHVAL
-# zero.policy = TRUE allows zero-length weight vectors
-reg_data_wtmatrix_listw = reg_data_wtmatrix |>
-                              spdep::nb2listw(style = "W", zero.policy = TRUE)
 
-spdep::moran.test(reg_data$LNMEDINC, reg_data_wtmatrix_listw)
+global_moran(reg_data$LNMEDINC, reg_data$nb, reg_data$weights)$`I`
 ```
 
 ```{r global moran map}
 
-plot = reg_data |>
-       dplyr::select(MEDHVAL)
+# install.packages("sfnetworks")
+# install.packages("igraph")
+# install.packages("tidygraph")
+# remotes::install_github("luukvdmeer/sfnetworks", "fix-onattach")
+# library(igraph)
+# library(tidygraph)
+# library(sfnet)
 
-plot links
-plot(plot, 
-     col= NA, lwd=1)
-xy<-st_coordinates(st_centroid(plot))
-par(mfrow=c(1,1)) 
-plot(reg_data_wtmatrix, xy, col='red', lwd = 2) , add = TRUE)
-title(main='Contiguous Queen Neighbours')
-
-
-
-
-# update.packages(c("sf", "raster", "rgdal", "sp"))
-
-reg_data = reg_data |>
-            st_set_crs("EPSG:4326")
-
-coords = st_coordinates(reg_data)
-
-reg_data_glob_moran_net = nb2lines(reg_data_wtmatrix, coords = coords)
-
-crs = st_crs(reg_data)
-
-reg_data_glob_moran_net = reg_data_glob_moran_net |>
-                            st_as_sf(crs = crs)
-
+reg_data_lines = nb2lines(reg_data$nb, 
+                          coords = st_centroid(reg_data$geometry), 
+                          as_sf = TRUE)
 
 tm_shape(reg_data) + 
   tm_borders(col = "grey", lwd = 0.5) + 
 tm_shape(reg_data) +
   tm_dots() +
-tm_shape(reg_data_glob_moran_net) +
+tm_shape(reg_data_lines) +
   tm_lines(col = "red")
- # tm_shape(phl_city_lims) +
-#  tm_borders(col = "grey", lwd = 5) +
-#  tm_compass(position = c("left", "top")) +
-#  tm_layout(main.title = "Median House Values by Tract",
-#            legend.position = c("right", "bottom"))
-
 ```
 
 1.	Is LNMEDHVAL significantly spatially autocorrelated?
@@ -364,22 +350,34 @@ We can run this test using `moran.mc` in the `spdep` package.
 # reshuffling test w 999 permutations
 # present Moran's I value, histogram of Moran's I values with all permutations, and p-value
 
-moranMC = spdep::moran.mc(reg_data$LNMEDINC, reg_data_wtmatrix_listw, 999)
+moranMC = global_moran_perm(reg_data$LNMEDINC, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)
 
 moranMC
 ```
 
 ```{r global moran hist}
-moranMCres<-moranMC$res
-hist(moranMCres, freq=10000000, nclass=100)   #Draws distribution of Moran's I's calculated from randomly permuted values
-# Here, we draw a red vertical line at the observed value of our Moran's I
-abline(v=moran(reg_data$LNMEDHHINC, reg_data_wtmatrix_listw, n=length(reg_data_wtmatrix_listw$neighbours), S0=Szero(reg_data_wtmatrix_listw))$`I`, col='red')
+#draws a histogram of our randomly permuted values
+# and adds a red line for our actual moran's i
+
+moranMCres = moranMC$res |>
+              as.data.frame()
+
+colnames(moranMCres) = "col1"
+
+ggplot(moranMCres) +
+  geom_histogram(aes(col1), bins = 100) +
+  geom_vline(xintercept = moranMC$statistic, col = "red") +
+  labs(title = "Histogram of MoranMCres",
+       x = "moranMCres",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 ```{r global moran plot}
-moran.plot(reg_data$LNMEDINC, reg_data_wtmatrix_listw,
-           xlab = 
-            ylab = )
+moran.plot(reg_data$LNMEDINC, nb2listw(reg_data$nb),
+           xlab = "ln(MEDHINC)", 
+            ylab = "Spatial Lag")
 ```
 
 ### Local Moran's I
@@ -390,7 +388,7 @@ For Local Moran’s I results, present the Significance Map and Cluster Map obta
 
 # local Moran's I analysis with queen weight matrix; print results
 
-lisa = localmoran(reg_data$LNMEDINC, reg_data_wtmatrix_listw)
+lisa = local_moran(reg_data$LNMEDINC, reg_data$nb, reg_data$weights, nsim = 999)
 
 head(lisa)
 ```
