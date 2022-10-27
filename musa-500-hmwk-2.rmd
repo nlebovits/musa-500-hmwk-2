@@ -574,12 +574,50 @@ a.	Compare these results to OLS results.
 4.	Compare the Spatial Lag regression and OLS regression models based on the Akaike Information Criterion/Schwarz Criterion, the Log Likelihood, and the Likelihood Ratio Test. 
 
 ```{r spatial lag}
-# Spatial Lag model
+spatial_lag_reg = lagsarlm(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))
 
-# using queen weights again, calculate spatial lag for med_h_val
-# save residuals in a new column
-# also save predicted value 
+summary(spatial_lag_reg)
 ```
+As with our OLS before, we will calculate the likelihood ratio for our spatial lag model.
+```{r likelihood ratio}
+LR.Sarlm(spatial_lag_reg, reg) #Here lagreg is the SL output; reg is the OLS output
+```
+
+To test for heteroscedasticity, we will once again run two of the three tests run above: 
+
+ 1) the Breusch-Pagan test
+```{r bp test lag reg}
+bptest.Sarlm(spatial_lag_reg, studentize = FALSE)
+```
+
+ 2) the Koenker-Bassett test (also known as the Studentized Breusch-Pagan test)
+```{r kb test lag reg}
+bptest.Sarlm(spatial_lag_reg, studentize = TRUE)
+```
+
+And, again, the Jarque-Bera test to assess whether the residuals of our regression are normal.
+```{r jb test lag reg}
+jarque.bera.test(spatial_lag_reg$residuals)
+```
+
+```{r spatial lag stnad resids map}
+reg_data = reg_data |>
+              mutate(
+                spatial_lag_resids = lagsarlm(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))$residuals
+              )
+
+tm_shape(reg_data)+
+  tm_fill(col = 'spatial_lag_resids', 
+          style = 'quantile', 
+          title = 'Spatial Lag Residuals', 
+          palette ='Blues')+
+  tm_layout(frame = FALSE)
+```
+
+```{r spatial lag stand resids mc}
+global_moran_perm(spatial_lag_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)
+```
+
 
 5.	Present the Moran’s I scatterplot of spatial lag regression residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals?
 6.	Overall, which model is doing better based on all of these criteria?
