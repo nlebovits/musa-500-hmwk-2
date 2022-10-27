@@ -34,3 +34,7 @@ Rcpp
 GWmodel
 tweetrmd
 sfdep
+zoo
+lmtest
+whitestrap
+tseries

@@ -265,6 +265,9 @@ library(spatialreg) #for spatial lag + error reg (alt)
 library(GWmodel) # for geographically weighted reg (alt)
 library(tweetrmd) # to embed a tweet
 library(sfdep) # for sf replacement of spdep
+library(lmtest) #for breusch pagan test
+library(whitestrap) # for white test
+library(tseries) # for jarque bera test
 ```
 
 ## Import and Prepare Data
@@ -435,8 +438,6 @@ For Local Moran’s I results, present the Significance Map and Cluster Map obta
 lisa = local_moran(reg_data$LNMEDINC, reg_data$nb, reg_data$weights, nsim = 999)
 
 head(lisa)
-
-lisa_ii = localmoran_perm(reg_data$LNMEDINC, nb2listw(reg_data$nb), nsim = 999)
 ```
 
 Now we can examine the local Moran's I values to see if there is significant spatial autocorrelation.
@@ -459,23 +460,21 @@ tm_shape(reg_data) +
 We can also visualize whether the LISA statistics suggest high or low clustering. [Ugh, fix this wording plz.]
 
 ```{r local moran clustering}
-
 reg_data = reg_data |>
             mutate(
                   mean = as.character(mean),
                   lisa_map = case_when(
-                                  ii > 0.5 ~ mean,
-                                  ii < -0.05 ~ mean,
-                                  TRUE ~ "insignificant"
+                                  p_ii < 0.05 ~ mean,
+                                  TRUE ~ "Insignificant"
                                 )
                   )
 
-
-pal = c("red", "pink", "grey", "lightblue", "blue")
+pal = c("red", "pink", "lightgrey", "lightblue", "blue")
 
 tm_shape(reg_data) +
-  tm_fill(col = "lisa_map", palette = pal)+
-  tm_layout(frame = FALSE)
+  tm_fill(col = "lisa_map", palette = pal, title = "LISA Clusters")+
+  tm_borders(col = "white", lwd = 0.05) +
+  tm_layout(frame = FALSE, main.title = "LISA Clusters")
 
 ```
 
@@ -492,33 +491,77 @@ a.	Do test results indicate a problem with normality?
 ```{r ols}
 # OLS Regression
 
-# Print results
-# Save residuals in new column
-# Create weighted residuals using queen matrix
+reg = lm(formula=LNMEDINC ~ LNMEDHVAL + PCTVACANT, data = reg_data)
+
+summary(reg)
+```
+Here we run a log likelihood test.
+```{r log liklihood}
+logLik(reg)
+```
+To test for heteroscedasticity, we will run three tests: 
+
+ 1) the Breusch-Pagan test
+```{r bp test}
+bptest(reg, studentize = FALSE)
+```
+
+ 2) the Koenker-Bassett test (also known as the Studentized Breusch-Pagan test)
+```{r kb test}
+bptest(reg, studentize = TRUE)
+```
+
+ 3) the White test
+```{r white test}
+white_test(reg)
+```
+
+Finally, we will run the Jarque-Bera test to assess whether the residuals of our regression are normal.
+```{r jb test}
+jarque.bera.test(reg$residuals)
 ```
 
 ### Scatterplot of Residuals
 ii.	Present the scatterplot of OLS_RESIDU by WT_RESIDU and describe the results.
 1.	Are the results (based on the value and significance level of ρ – that’s referred to as Slope b in the results) indicative of significant spatial autocorrelation?
+
+Now, let’s generate standardized residuals, which are OLS Model residuals divided by an estimate of their standard deviation, and map them. Visually, it certainly seems that there’s spatial autocorrelation in the residuals, with some higher values clustered in the northeast and northwest of the city, and some lower values clustered in north Philadelphia and downtown.
 ```{r ols resids}
-# Plot OLS residuals against queen neighbors
+reg_data = reg_data |>
+              mutate(stand_resids = rstandard(reg),
+                     spatial_lag = st_lag(stand_resids, 
+                                             nb, 
+                                             weights))
 
-# set weighted residuals are independent variable, residuals are dependent variable
-# visualize w scatterplot
-# make sure to find slope of line of best fit--this will be coefficient
-  # note that this is the same thing as running a simple regression with residuals as dependent variable and weighted resids as independent variable. The Beta coefficient of the beta residuals in that regression will be the same as the slope of this line of best fit
+tm_shape(reg_data)+
+  tm_fill(col = 'stand_resids', 
+          style = 'quantile', 
+          title = 'Standardized OLS Residuals', 
+          palette ='Blues')+
+  tm_layout(frame = FALSE, 
+            title = 'Standardised OLS Residuals')
+```
+However, a visual assessment is not sufficient, and we will test the presence of spatial autocorrelation in two ways: 1) by regressing residuals on their queen neighbors, and 2) by looking at the Moran’s I of the residuals.
+
+First, let’s regress the OLS standardized residuals on the spatial lag of the OLS residuals (i.e., OLS residuals at the queen neighbors). We can see that the beta coefficient of the lagged residuals (sometimes also referred to as rho or lambda) is significant and positive (0.598, p<0.0001), meaning that there’s a significant level of spatial autocorrelation in the residuals. This is consistent with Moran’s I of the residuals we see below.
+```{r reg resids on nn}
+resids_lm = lm(formula = stand_resids ~ spatial_lag, data = reg_data)
+
+summary(resids_lm)
+```
+### Moran's I Significance
+
+Once again, we can use the Monte Carlo simulation to generate a Moran's I statistics and a pseudo p-value.
+```{r stand resids mc}
+global_moran_perm(reg_data$stand_resids, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)
+```
+It is strongly apparent that spatial autocorrelation exists among the regression residuals of the OLS Model. The p-value is very small indicating that Moran’s I is significant. Because there’s clearly spatial autocorrelation in OLS residuals, the OLS Model is inappropriate and we need to consider another method. Here, we will attempt to run the Spatial Lag Model, the Spatial Error Model, and Geographically Weighted Regression.
+```{r stand resids scatter}
+moran.plot(reg_data$stand_resids, nb2listw(reg_data$nb),
+           xlab = "Standardized Residuals", 
+            ylab = "Spatial Lag")
 ```
 
-### Moran's I Scatterplot
-iii.	Present the Moran’s I scatterplot and results from the 999 permutations for OLS regression residuals.
-1.	Are you seeing significant spatial autocorrelation in your OLS residuals, and is this problematic?
-```{r moran scatter}
-# Calculate Moran's I of OLS regression residuals
-
-# test whether OLS regression residuals are spatially autocorrelated
-# check significance of Moran's I here by running 999 permutations
-# print scatterplot of results & significance test
-```
 
 ## Spatial Lag and Spatial Error Regression
 
