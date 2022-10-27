@@ -636,12 +636,56 @@ a.	Compare these results to OLS results.
 3.	State whether, based on the Breusch-Pagan test, the spatial lag regression residuals are still heteroscedastic? 
 4.	Compare the Spatial Error regression and OLS regression based on the Akaike Information Criterion/Schwarz Criterion, the Log Likelihood, and the Likelihood Ratio Test. 
 
+
 ```{r spatial error}
-# Spatial Error model
-# using queen weights again, calculate spatial error for med_h_val
-# save residuals in a new column
-# also save predicted value 
+spatial_error_reg = errorsarlm(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, 
+                               data = reg_data, 
+                               nb2listw(reg_data$nb))
+
+summary(spatial_lag_reg)
+
+# NOTE: I AM GETTTING SLIGHTLY DIFFERENT VALUES THAN EUGENE HERE. COULD IT BE THE RESULT OF RANDOMNESS?
 ```
+As with our OLS before, we will calculate the likelihood ratio for our spatial lag model.
+```{r error likelihood ratio}
+LR.Sarlm(spatial_error_reg, reg) #Here lagreg is the SL output; reg is the OLS output
+```
+
+To test for heteroscedasticity, we will once again run two of the three tests run above: 
+
+ 1) the Breusch-Pagan test
+```{r bp test error reg}
+bptest.Sarlm(spatial_error_reg, studentize = FALSE)
+```
+
+ 2) the Koenker-Bassett test (also known as the Studentized Breusch-Pagan test)
+```{r kb test error reg}
+bptest.Sarlm(spatial_error_reg, studentize = TRUE)
+```
+
+And, again, the Jarque-Bera test to assess whether the residuals of our regression are normal.
+```{r jb test error reg}
+jarque.bera.test(spatial_error_reg$residuals)
+```
+
+```{r spatial error stnad resids map}
+reg_data = reg_data |>
+              mutate(
+                spatial_error_resids = errorsarlm(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))$residuals
+              )
+
+tm_shape(reg_data)+
+  tm_fill(col = 'spatial_error_resids', 
+          style = 'quantile', 
+          title = 'Spatial Error Residuals', 
+          palette ='Blues')+
+  tm_layout(frame = FALSE)
+```
+
+```{r spatial error stand resids mc}
+global_moran_perm(spatial_error_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)
+```
+
 
 5.	Present the Moran’s I scatterplot of spatial error regression residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals?
 6.	Overall, which model is doing better based on all of these criteria?
@@ -663,41 +707,161 @@ a.	Which model has better (lower) Akaike Information Criterion and Schwarz Infor
 i.	Present GWR results from the _supp table (call this Table 4)
 1.	Compare the (overall) R-squared of the GWR regression with the R-squared of the OLS regression. State which regression method seems to be doing a better job of explaining the variance in the dependent variable.
 2.	Compare the Akaike Information Criteria of GWR with those of OLS, Spatial Lag and Spatial Error models. Which model seems to be doing a better job based on that (remember, the lower the Akaike Information Criterion, the better the fit).
-```{r gwr}
-# Geographically Weighted Regression
 
-# run geographically weighted regression model uising:
-  # lnnbelpov
-  # pctbachmor
-  # pctsingles
-  # pctvacant
-# make sure to produce results as shapefile
-# kernel type should be "adaptive"; bandwidth type should be "AICc"
-# print out:
-  # supplemental table
-  # choropleth map of local R-squared values
+Here we create an adaptive bandwidth.
+```{r adaptive bandwidth est}
+adapt_bandwidth_est = GWmodel::bw.gwr(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, 
+                                data = reg_data |> sf::as_Spatial(),
+                                approach = 'AIC', 
+                                kernel = 'gaussian', 
+                                adaptive = TRUE)
+
+adapt_bandwidth_est = gwr.sel(formula=LNMEDINC~LNMEDHVAL+PCTVACANT, 
+                              data = reg_data |> sf::as_Spatial(),
+                              method = "aic",
+                              adapt = TRUE)
+```
+
+Here we create a fixed bandwidth.
+```{r fixed bandwidth est}
+fixed_bandwidth_est = gwr.sel(formula=LNMEDINC~LNMEDHVAL+PCTVACANT, 
+                              data = reg_data |> sf::as_Spatial(),
+                              method = "aic",
+                              adapt = FALSE)
+
+fixed_bandwidth_est
+```
+Here we run a basic GWR with an adaptive bandwidth.
+```{r adaptive bw gwr}
+gwrmodel_adaptive = gwr(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT,
+                        data = reg_data |> sf::as_Spatial(),
+                        adapt = adapt_bandwidth_est, #adaptive bandwidth determined by proportion of observations accounted for
+                        gweight = gwr.Gauss,
+                        se.fit = TRUE, #to return local standard errors
+                        hatmatrix = TRUE)
+
+gwrmodel_adaptive
+```
+
+Here we run a basic GWR with a fixed bandwidth.
+```{r fixed bw gwr}
+# Perform a basic GWR
+gwrmodel_fixed = gwr(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT,
+              data = reg_data |> sf::as_Spatial(),
+              bandwidth = fixed_bandwidth_est, #adaptive bandwidth determined by proportion of observations accounted for
+              gweight = gwr.Gauss,
+              se.fit = TRUE, #to return local standard errors
+              hatmatrix = TRUE)
+
+gwrmodel_fixed
+```
+We can look at a summary of the coefficients of the local regressions, stored in the SDF object within thegwrmodel. Note in particular the minimum and maximum values of the Local $R^2$ (0.05789 - 0.75169). There are no negative values, meaning that this output, unlike the output we get in some versions of ArcGIS Pro, is correct.
+
+### Local Regression Results
+
+```{r local gwr summary}
+summary(gwrmodel_adaptive$SDF)
+```
+We can also map the standardized coefficients. The higher the absolute value of the ratio between the coefficient and the standard error, the more plausible it is that the relationship between the predictor and the dependent variable is significant at the location.
+```{r gwr dataframe and map}
+gwr_adaptive_results = as.data.frame(gwrmodel_adaptive$SDF)
+
+gwr_fixed_results = as.data.frame(gwrmodel_fixed$SDF)
+
+reg_data = reg_data |>
+              mutate(
+                coef_lnmedhval_adapt_stand = gwr_adaptive_results$LNMEDHVAL / gwr_adaptive_results$LNMEDHVAL_se,
+                coef_pctvacant_adapt_stand = gwr_adaptive_results$PCTVACANT / gwr_adaptive_results$PCTVACANT_se,
+                gwr_adapt_resids = gwr_adaptive_results$gwr.e,
+                gwr_adapt_r2 = gwr_adaptive_results$localR2,
+                coef_lnmedhval_fixed_stand = gwr_fixed_results$LNMEDHVAL / gwr_fixed_results$LNMEDHVAL_se,
+                coef_pctvacant_fixed_stand = gwr_fixed_results$PCTVACANT / gwr_fixed_results$PCTVACANT_se,
+                gwr_fixed_resids = gwr_fixed_results$gwr.e,
+                gwr_fixed_r2 = gwr_fixed_results$localR2,
+              )
+
+coef_lnmedhval_adapt_stand_map = tm_shape(reg_data)+
+                                    tm_fill(col='coef_lnmedhval_adapt_stand', 
+                                            breaks=c(-Inf, -6, -4, -2, 0, 2, 4, 6, Inf), 
+                                            title='Standardized coefficient of LNMEDHVAL', 
+                                            palette ='-RdBu')+
+                                    tm_layout(frame=FALSE, 
+                                              main.title = 'Median House Value (Log)',
+                                              title = "Adaptive GWR")
+
+coef_pctvacant_adapt_stand_map = tm_shape(reg_data)+
+                                    tm_fill(col='coef_pctvacant_adapt_stand', 
+                                            breaks=c(-Inf, -6, -4, -2, 0, 2, 4, 6, Inf), 
+                                            title='Standardized coefficient of PCTVACANT', 
+                                            palette='-RdBu')+
+                                    tm_layout(frame=FALSE, 
+                                              main.title = 'Percentage of Housing Vacant',
+                                              title = "Adaptive GWR")
+
+tmap_arrange(coef_lnmedhval_adapt_stand_map, coef_pctvacant_adapt_stand_map, ncol=2)
+```
+
+### Local R-Squared Results
+```{r gwr rsquared}
+tm_shape(reg_data)+
+  tm_fill(col = 'gwr_adapt_r2',  
+          breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8), 
+          n = 5, 
+          palette = 'Blues',
+          title = "R Squared")+
+  tm_layout(frame = FALSE, 
+  main.title = 'Local R Squared')
+```
+
+### Local R-Squared Results
+
+```{r gwr resids}
+tm_shape(reg_data)+
+  tm_fill(col = 'gwr_adapt_resids',  
+          style = 'quantile',
+          palette = 'Blues', 
+          title = "Residuals")+
+  tm_layout(frame = FALSE, 
+  main.title = 'Residuals',
+  title = "Adaptive GWR")
 ```
 
 ### Moran's I Scatterplot of GWR Residuals
 ii.	Present the Moran’s I scatterplot of GWR residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals? What about the Spatial Lag and Spatial Error Residuals.
 ```{r gwr moran}
-# Moran's I of GWR Residuals
+moran.plot(reg_data$gwr_adapt_resids, nb2listw(reg_data$nb),
+           xlab = "Standardized Residuals", 
+            ylab = "GWR Residuals (Adaptive)")
 
-# once again, run moran's I for the GWR residuals; test w 999 permutations
-# print scatterplot & summary table of significance test
+
 ```
 
-### Local Regression Results
-iii.	Be sure to discuss local regression results, as is done on the slides. Are there locations in the city where the relationships between each of the predictors and the dependent variable possibly significant?
-```{r local reg}
-# Local Regression Results
+## Model Comparison
+```{r model comp}
+model = c("OLS", "Spatial Lag", "Spatial Error", "GWR")
+global_moran = c(global_moran(reg_data$LNMEDINC, reg_data$nb, reg_data$weights)$`I`,
+                 global_moran_perm(spatial_lag_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)$`I`,
+                 global_moran_perm(spatial_error_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)$`I`)
+aic = c()
+log_lik = c( , , NA, NA)
 
-# Follow instructions from class slides to obtain local regression results. Specifically, present maps of the ratio of the beta coefficients and the standard error estimates.
-# Use dark red when the ratio is < -2, pink when the ratio is between 0 and -2, light blue when the ratio is between 0 and 2, and dark blue when the ratio is > 2.
+as.data.frame()
+
 ```
 
-### Local R-Squared Results
-iv.	Present and discuss a choropleth map of local R-squared results. 
+We can do the following to compare all 4 models:
+1. Look at the Moran’s I of the residuals from each model and choose the model with the lowest (absolute) Moran’s I
+2. Compare the AIC values from each model and choose the model with the lowest value
+In addition, we can do the following to compare the Spatial Lag Model to OLS:
+1. Compare the log likelihoods; the model with the higher value is the better one.
+2. Examine the results of the likelihood ratio test; if it’s significant, the Spatial Lag Model is better than OLS.
+In addition, we can do the following to compare the Spatial Error Model to OLS:
+1. Compare the log likelihoods; the model with the higher value is the better one.
+2. Examine the results of the likelihood ratio test; if it’s significant, the Spatial Error Model is better than OLS.
+Lastly, we can also do the following to compare GWR to OLS:
+1. Compare the R2 from OLS with the Quasi-global R2 from GWR; the model with the higher value is the better one.
+2. Examine whether there’s spatial variability in standardized coefficients or local R2 values. If there is, it might mean that a single global regression might not capture the varying spatial relationships between the dependent variable and the predictors.
+
 
 # Discussion
 a)	In a couple sentences, recap what you did in the paper and your findings. Discuss what conclusions you can draw, and which of the four regression methods (OLS, Spatial Lag, Spatial Error, GWR) was the best, based on the results. 
