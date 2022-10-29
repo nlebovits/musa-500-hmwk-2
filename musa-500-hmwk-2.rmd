@@ -576,7 +576,7 @@ a.	Compare these results to OLS results.
 ```{r spatial lag}
 spatial_lag_reg = lagsarlm(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))
 
-summary(spatial_lag_reg)
+sumslr = summary(spatial_lag_reg)
 ```
 As with our OLS before, we will calculate the likelihood ratio for our spatial lag model.
 ```{r likelihood ratio}
@@ -757,7 +757,7 @@ gwrmodel_fixed
 ```
 We can look at a summary of the coefficients of the local regressions, stored in the SDF object within thegwrmodel. Note in particular the minimum and maximum values of the Local $R^2$ (0.05789 - 0.75169). There are no negative values, meaning that this output, unlike the output we get in some versions of ArcGIS Pro, is correct.
 
-### Local Regression Results
+### Local GWR Results
 
 ```{r local gwr summary}
 summary(gwrmodel_adaptive$SDF)
@@ -801,7 +801,7 @@ coef_pctvacant_adapt_stand_map = tm_shape(reg_data)+
 tmap_arrange(coef_lnmedhval_adapt_stand_map, coef_pctvacant_adapt_stand_map, ncol=2)
 ```
 
-### Local R-Squared Results
+### Local GWR R-Squared Results
 ```{r gwr rsquared}
 tm_shape(reg_data)+
   tm_fill(col = 'gwr_adapt_r2',  
@@ -813,7 +813,7 @@ tm_shape(reg_data)+
   main.title = 'Local R Squared')
 ```
 
-### Local R-Squared Results
+### Local GWR Residuals Results
 
 ```{r gwr resids}
 tm_shape(reg_data)+
@@ -837,18 +837,6 @@ moran.plot(reg_data$gwr_adapt_resids, nb2listw(reg_data$nb),
 ```
 
 ## Model Comparison
-```{r model comp}
-model = c("OLS", "Spatial Lag", "Spatial Error", "GWR")
-global_moran = c(global_moran(reg_data$LNMEDINC, reg_data$nb, reg_data$weights)$`I`,
-                 global_moran_perm(spatial_lag_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)$`I`,
-                 global_moran_perm(spatial_error_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)$`I`)
-aic = c()
-log_lik = c( , , NA, NA)
-
-as.data.frame()
-
-```
-
 We can do the following to compare all 4 models:
 1. Look at the Moran’s I of the residuals from each model and choose the model with the lowest (absolute) Moran’s I
 2. Compare the AIC values from each model and choose the model with the lowest value
@@ -858,9 +846,90 @@ In addition, we can do the following to compare the Spatial Lag Model to OLS:
 In addition, we can do the following to compare the Spatial Error Model to OLS:
 1. Compare the log likelihoods; the model with the higher value is the better one.
 2. Examine the results of the likelihood ratio test; if it’s significant, the Spatial Error Model is better than OLS.
-Lastly, we can also do the following to compare GWR to OLS:
+
+
+Note that the global R^2 for our GWR here is not exactly the same as in the actual function output; we're calculating it [based on the source code](https://stackoverflow.com/questions/43927662/return-the-global-r2-of-a-geographically-weighted-regression-gwr-in-r) so that it will be automatically update in the table.
+
+```{r model comp}
+model = c("OLS", "Spatial Lag", "Spatial Error", "GWR")
+global_moran = c(global_moran_perm(reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)$statistic,
+                 global_moran_perm(spatial_lag_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)$statistic,
+                 global_moran_perm(spatial_error_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)$statistic,
+                 global_moran_perm(reg_data$gwr_adapt_resids, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)$statistic)
+  
+aic = c(stepAIC(reg)$anova$AIC,
+        spatial_lag_reg$AIC_lm.model, #there's a difference between AIC and AIC for the lm for both this and spatial error
+        spatial_error_reg$AIC_lm.model, #not sure why that is--might have to ask Eugene
+        #also, why are these both the same?? they shouldn't be...
+        gwrmodel_adaptive$results$AICh)
+
+log_lik = c(logLik(reg), logLik(spatial_lag_reg), NA, NA)
+
+lik_ratio = c(NA, LR.Sarlm(spatial_lag_reg, reg)$statistic, LR.Sarlm(spatial_error_reg, reg)$statistic, NA)
+  
+lik_rat_p = c(NA, LR.Sarlm(spatial_lag_reg, reg)$p.value, LR.Sarlm(spatial_error_reg, reg)$p.value, NA)
+
+r2 = c(summary(reg)$r.squared, NA, NA, (1 - (gwrmodel_adaptive$results$rss/gwrmodel_adaptive$gTSS))) #am I meant to be using r squared or ADJUSTED r squared?
+                                            # calculating global r squared for gwr based on: https://stackoverflow.com/questions/43927662/return-the-global-r2-of-a-geographically-weighted-regression-gwr-in-r
+
+comp = cbind(model,
+             round(global_moran, 3),
+             round(aic, 1),
+             round(log_lik, 4),
+             round(lik_ratio, 1),
+             lik_rat_p,
+             round(r2, 4)) |>
+      as.data.frame()
+
+colnames(comp) = c("Model", "Moran's I", "AIC", "Log Likelihood", "Likelihood Ratio", "L.R. P-Value", "R^2")
+
+table_out = comp |>
+        gt() |>
+        tab_header(
+          title = md("**Model Comparison**"))
+     
+#print output
+table_out
+```
+
+
+Eugene says: "Lastly, we can also do the following to compare GWR to OLS:
 1. Compare the R2 from OLS with the Quasi-global R2 from GWR; the model with the higher value is the better one.
-2. Examine whether there’s spatial variability in standardized coefficients or local R2 values. If there is, it might mean that a single global regression might not capture the varying spatial relationships between the dependent variable and the predictors.
+2. Examine whether there’s spatial variability in standardized coefficients or local R2 values. If there is, it might mean that a single global regression might not capture the varying spatial relationships between the dependent variable and the predictors."
+
+However, I don't think means that for #2 we can look at *local* $R^2$ or coefficients, because I don't think those exist for an OLS model---only for a spatial model. We should ask about this, though.
+
+I also cannot figure out why that last map isn't rendering right. It does in mapview!
+```{r ols vs gwr map}
+gwr_local_r2 = tm_shape(reg_data)+
+                          tm_fill(col = 'gwr_adapt_r2', 
+                                  style = 'quantile', 
+                                  title = 'GWR Local R^2', 
+                                  palette = 'Blues')+
+                          tm_layout(frame = FALSE)
+
+gwr_coef_lnmedinc = tm_shape(reg_data)+
+                        tm_fill(col = 'coef_lnmedhval_adapt_stand', 
+                                style = 'quantile', 
+                                title = 'GWR Coef., LNMEDINC', 
+                                palette = 'Blues')+
+                        tm_layout(frame = FALSE)
+
+
+gwr_coef_pctvacant = tm_shape(reg_data)+
+                        tm_fill(col = 'coef_pctvacant_adapt_stand', 
+                                style = 'quantile', 
+                                title = 'GWR Coef., LNMEDINC', 
+                                palette = 'Blues')+
+                        tm_layout(frame = FALSE)
+
+# mapview(reg_data, zcol = 'coef_pctvacant_adapt_stand')
+
+tmap_arrange(gwr_local_r2,
+             gwr_coef_lnmedinc,
+             gwr_coef_pctvacant,
+             ncol = 3)
+```
 
 
 # Discussion
