@@ -69,7 +69,6 @@ In [our previous homework assignment](https://rpubs.com/nlebovits/musa-550-assig
 ## Prior Analysis
 In HW 1, we utilized OLS (ordinary least sqaures) regression to build a model looking at the relationship between a dependent variable (log-transformed median house values) and four predictors (percentage pf vacant house, percentage of single family house, percentage of residents holding a Bachelor or higher degree, and log-transformed poverty rate). 
 
-
 ## Issues with OLS
 Although the result of our OLS regression model was relatively acceptable for social science research, it inevitably suffered from OLS regression's incapability dealing with the spatial component of our dataset . Given the geographic nature of house price data, taking sptial elements into consideration may largely improve our model. 
 
@@ -90,9 +89,6 @@ As one of the most influential work, Waldo Tobler proposed the First Law of Geog
 ### Moran's I
 Talk about Moran’s I; Present and explain formula for Moran’s I
 
-
-Minwook Kang test
-
 ### Weight Matrices
 Weight Matrices consists of a $n x n$ table (given n observations in the dataset). They are useful for calculating spatial auto-correlation
 
@@ -110,11 +106,12 @@ In your own words, talk about how you test whether the spatial autocorrelation (
 Briefly describe the concept of local spatial autocorrelation, without going into any of the mathematical detail.
 
 
-##-----------------------------min doing-------------------------------------------------------------------------------------------##
+##-----------------------------min done start 221029-------------------------------------------------------------------------------------------##
 
 ## OLS Regression and Assumptions
 
 ### Overview of OLS Regression
+
 Begin by giving a brief (3-5 sentence) overview of OLS regression. Specifically, list the assumptions of OLS
 1.	Refer the reader to your HW 1 for more information on OLS.
 [FYI: Referring the reader to a previous HW assignment is often done in ESE 502 in order to avoid rewriting a lot of the same things over again]. 
@@ -131,41 +128,45 @@ According to the HW 1, three of above five OLS assumptions were violated. First,
 
 ### Random Errors in Spatial Data
 
+```
 ii.	State that when the data has a spatial component, the assumption that your errors are random/independent often doesn’t hold
 1.	Indicate that you can test the assumption in (ii) above by examining the spatial autocorrelation of the residuals using Moran’s I.
+```
 
-When residuals contain a systematic pattern, the assumption of randomness of residuals is not met. Specifically, if we have spatially autocorrelated OLS residuals, there is systematic under-prediction or over-prediction in certain parts of the study region; furthermore, the significance estimates for the β coefficients in OLS may be incorrect (inflated). There are a couple ways to check for spatial autocorrelation of the OLS residuals, though the first thing to do might be to map the residuals. We want the map of the residuals to look random, and it implies that our model is not spatially autocorrelatedAfter looking at the residual maps, we would want to	Compute the Moran’s I of the residuals. Ideally, we will see a Moran’s I close to 0, there is an obvious problem with spatial autocorrelation of residuals.
+When residuals contain a systematic pattern, the assumption of randomness of residuals is not met. Specifically, if we have spatially autocorrelated OLS residuals, there is systematic under-prediction or over-prediction in certain parts of the study region; furthermore, the significance estimates for the β coefficients in OLS may be incorrect (inflated). There are a couple ways to check for spatial autocorrelation of the OLS residuals, though the first thing to do might be to map the residuals. We want the map of the residuals to look random, and it implies that our model is not spatially autocorrelated. After looking at the residual maps, we would want to	Compute the Moran’s I of the residuals. Ideally, we will see a Moran’s I close to 0, there is an obvious problem with spatial autocorrelation of residuals.
 
+```
 2.	Indicate that another way to test OLS residuals for spatial autocorrelation is to regress them on nearby residuals (here, these nearby residuals are residuals at neighboring block groups, as defined by the Queen matrix). a.	Mention rho (ρ) and how it is calculated. [It’s that term that’s known as lambda (λ) in GeoDa, and is referred to as Slope b in the statistics at the bottom of the scatterplot of OLS_RESIDU and WT_RESIDU]
+```
 
-Regress residuals ε ̂ on spatially lagged residuals Wε ̂. Ideally, we would see that there is no relationship between ε ̂ and Wε ̂ – that is, that the coefficient of Wε ̂, which we denote by λ (as opposed to β1) is not significantly different from 0. (λ can range between -1 and 1). When we are dealing with the residual map that looks like the map on the left (in the maps on the previous page), the λ is close to 0; when we are dealing with a residual map that looks like the map on the right, the λ is close to 1.
-
+Regress residuals $\hat{ε}$ on spatially lagged residuals $W\hat{ε}$. Ideally, we would see that there is no relationship between $\hat{ε}$ and  $W\hat{ε}$ – that is, that the coefficient of  $W\hat{ε}$, which we denote by $λ$ in GeoDa (as opposed to $β_1$) is not significantly different from 0. $λ$ can range between -1 and 1. we are able to regress residuals on the nearest neighbor residuals, thereby filtering the spatial information out of the OLS residuals and decomposing the residuals $ε$ into two parts: one with a spatial pattern $λWε$ and one which is simply random noise $u$.
+$$ y = β_0 + β_1X_1 +...+ β_nX_n +λWε+ u$$  
 
 ### Testing Other Regression Assumptions in R
-iii.	State that GeoDa, the tool that you’re using to run your OLS regression, also has a way of testing other regression assumptions. 
 
+```
+iii.	State that GeoDa, the tool that you’re using to run your OLS regression, also has a way of testing other regression assumptions. 
 1.	The first is the assumption of homoscedasticity, which is tied to the assumption of independence of errors.
-a.	State which test(s) is/are used to examine data for heteroscedasticity in GeoDa, and state the null and alternative hypotheses. =
+a.	State which test(s) is/are used to examine data for heteroscedasticity in GeoDa, and state the null and alternative hypotheses.
+```
 
 We can use the following tests in GeoDa to test the null hypothesis of homoscedasticity, against the alternative hypothesis of heteroscedasticity.
-i.	Koenker-Bassett Test
-ii.	Breusch-Pagan Test
-iii.	White Test
-Ideally, we would want to fail to reject the null hypothesis for the alternative hypothesis (i.e., get a p-value > 0.05).
+-1.	Koenker-Bassett Test : Robust Tests for Heteroscedasticity Based on Regression Quantiles
+-2.	Breusch-Pagan Test : Simple test for heteroscedasticity and random coefficient variation
+-3.	White Test : A Heteroskedasticity-Consistent Covariance Matrix Estimator and a Direct Test for Heteroskedasticity.
+The null hypothesis here is that of homoscedasticity. If the p-value is less than 0.05, then we can reject the null hypothesis for the alternate hypothesis of heteroscedasticity.
 
-
+```
 2.	Another assumption is that of normality of errors.
 a.	State which test is used to test for normality of errors in GeoDa, and state the null and alternative hypotheses.
+```
 
-2.	When residuals are not normal, we may run into some problems for OLS (and spatial) regression. We can check for normality by:
-a.	Examining the histogram of residuals
-b.	Looking at the Jarque-Bera test in Geoda
+When residuals are not normal, we may run into some problems for OLS (and spatial) regression. We can check for normality by
+-1.	Examining the histogram of residuals
+-2.	Looking at the Jarque-Bera test in Geoda
+The Jarque-Bera test in GeoDa examines the Null Hypothesis that the residuals are from a normal distribution. If p-value < 0.05, we can reject the Null Hypothesis of normality for the alternative hypothesis of non-normality.
 
-
-##-----------------------------min doing-------------------------------------------------------------------------------------------##
-
-
-
+##-----------------------------min done end 221029-------------------------------------------------------------------------------------------##
 
 ## Spatial Lag and Spatial Error Regression
 
