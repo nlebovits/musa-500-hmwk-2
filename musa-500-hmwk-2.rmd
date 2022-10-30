@@ -168,6 +168,9 @@ The Jarque-Bera test in GeoDa examines the Null Hypothesis that the residuals ar
 
 ##-----------------------------min done end 221029-------------------------------------------------------------------------------------------##
 
+
+##-----------------------------min doing part2 start ----------------------------------------------------------------------------------------##
+
 ## Spatial Lag and Spatial Error Regression
 
 ### Spatial Lag Regression
@@ -206,6 +209,8 @@ c.	Likelihood Ratio Test
 2.	Be sure to describe what each of the above criteria is, and how you decide which model is better based on this criterion (state any null/alternative hypotheses, if applicable).
 3.	State that another way of comparing OLS results with spatial lag and spatial error results is by looking at the Moran’s I of regression residuals. 
 a.	Indicate how you would decide which model is better based on this criterion.
+
+##-----------------------------min doing part2 end ----------------------------------------------------------------------------------------##
 
 ## Geographically Weighted Regression
 
