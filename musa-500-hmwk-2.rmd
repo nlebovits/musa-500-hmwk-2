@@ -238,6 +238,9 @@ Indicate why p-values are not part of the GWR output.
 #install.packages("remotes")
 #remotes::install_github("gadenbuie/tweetrmd")
 
+#remove.packages("rlang")
+#install.packages("rlang")
+
 library(tidyverse) #general
 library(sf) #spatial
 library(mapview) #quick mapping
@@ -260,6 +263,10 @@ library(spgwr) # for geographically weighted reg
 library(spatialreg) #for spatial lag + error reg (alt)
 library(GWmodel) # for geographically weighted reg (alt)
 library(tweetrmd) # to embed a tweet
+library(sfdep) # for sf replacement of spdep
+library(lmtest) #for breusch pagan test
+library(whitestrap) # for white test
+library(tseries) # for jarque bera test
 ```
 
 ## Import and Prepare Data
@@ -267,8 +274,7 @@ library(tweetrmd) # to embed a tweet
 As in Homework #1, we are completing this assignment in R (rather than using GeoDa and ArcGIS). Once again, we will read in the original shapefile of data and transform the relevant columns to produce the initial data that we need for our analysis.
 
 ```{r import}
-#Nissim
-reg_data = read_sf('C:/Users/Nissim/Desktop/Fall 2022/Spat Stats/Homeworks/ass_1_data_shp/RegressionData.shp')
+reg_data = st_read('C:/Users/Nissim/Desktop/Fall 2022/Spat Stats/musa-500-hmwk-2/reg_data_files/Regression Data.shp')
 
 #Min
 #reg_data = read_sf('C:/Users/vestalk/Desktop/00_Upenn/20.Fall/03.MUSA 5000 Spatial Statistics and Data Analysis/Assignment/HW1/RegressionData.shp')
@@ -311,12 +317,13 @@ The map below displays the spatial distribution of median house value by census 
 tmap_mode("plot")
 
 tm_shape(reg_data) + 
-  tm_polygons(title = "ln(MEDHVAL)", col = "ln_med_h_val", border.col = NA, border.alpha = 0, lwd = 0, palette = "viridis", style = "jenks") + 
+  tm_polygons(title = "ln(MEDHVAL)", col = "LNMEDHVAL", border.col = NA, border.alpha = 0, lwd = 0, palette = "viridis", style = "jenks") + 
  # tm_shape(phl_city_lims) +
 #  tm_borders(col = "grey", lwd = 5) +
   tm_compass(position = c("left", "top")) +
   tm_layout(main.title = "Median House Values by Tract",
-            legend.position = c("right", "bottom"))
+            legend.position = c("right", "bottom"),
+            frame = FALSE)
 ```
 
 
@@ -324,103 +331,102 @@ tm_shape(reg_data) +
 Present and describe the global Moran’s I value and the random permutations test results.
 
 Here, we'll prepare a weight matrix based on Queen neighbors.^[This analysis is based on [Data Analysis and Visualization with R:Spatial (2022)](http://www.geo.hunter.cuny.edu/~ssun/R-Spatial/)] We can do this using the `spdep` package; `spdep::poly2nd` produces neighboring relations and then `spdep::nb2listw` converts them to a weight matrix. 
+
+Here we're using the `sfdep` package (rather than `spdep`), as we prefer working with `sf` objects to `sp` objects. Documentation is [available here](https://sfdep.josiahparry.com/).
 ```{r queen weights}
+
 # create our queen weight matrix
-reg_data_wtmatrix = reg_data |>
-                      spdep::poly2nb(row.names = reg_data$POLY_ID)
+# reg_data_nb = reg_data |>
+        #              spdep::poly2nb(row.names = reg_data$POLY_ID)
 
-summary(reg_data_wtmatrix)
+# grab geometry
+reg_data = reg_data |>
+              mutate(nb_geom = st_geometry(reg_data), #geoms for poly2nb
+                     nb = st_contiguity(nb_geom), # generate neighbors
+                     weights = st_weights(nb)) # weight matrices from neighbors
+
+summary(reg_data$nb)
 ```
 
-```{r global moran}
-# Global Moran's I
-
-# now use that weight matrix to calculate global moran's i for MEDHVAL
-# zero.policy = TRUE allows zero-length weight vectors
-reg_data_wtmatrix_listw = reg_data_wtmatrix |>
-                              spdep::nb2listw(style = "W", zero.policy = TRUE)
-
-spdep::moran.test(reg_data$LNMEDINC, reg_data_wtmatrix_listw)
-```
-
+We can visualize the connections between neighbors based on the weight matrix that we've connected. Here's what they look like:
 ```{r global moran map}
 
-plot = reg_data |>
-       dplyr::select(MEDHVAL)
+# install.packages("sfnetworks")
+# install.packages("igraph")
+# install.packages("tidygraph")
+# remotes::install_github("luukvdmeer/sfnetworks", "fix-onattach")
+# library(igraph)
+# library(tidygraph)
+# library(sfnet)
 
-plot links
-plot(plot, 
-     col= NA, lwd=1)
-xy<-st_coordinates(st_centroid(plot))
-par(mfrow=c(1,1)) 
-plot(reg_data_wtmatrix, xy, col='red', lwd = 2) , add = TRUE)
-title(main='Contiguous Queen Neighbours')
-
-
-
-
-# update.packages(c("sf", "raster", "rgdal", "sp"))
-
-reg_data = reg_data |>
-            st_set_crs("EPSG:4326")
-
-coords = st_coordinates(reg_data)
-
-reg_data_glob_moran_net = nb2lines(reg_data_wtmatrix, coords = coords)
-
-crs = st_crs(reg_data)
-
-reg_data_glob_moran_net = reg_data_glob_moran_net |>
-                            st_as_sf(crs = crs)
-
+reg_data_lines = nb2lines(reg_data$nb, 
+                          coords = st_centroid(reg_data$geometry), 
+                          as_sf = TRUE)
 
 tm_shape(reg_data) + 
   tm_borders(col = "grey", lwd = 0.5) + 
 tm_shape(reg_data) +
   tm_dots() +
-tm_shape(reg_data_glob_moran_net) +
-  tm_lines(col = "red")
- # tm_shape(phl_city_lims) +
-#  tm_borders(col = "grey", lwd = 5) +
-#  tm_compass(position = c("left", "top")) +
-#  tm_layout(main.title = "Median House Values by Tract",
-#            legend.position = c("right", "bottom"))
-
+tm_shape(reg_data_lines) +
+  tm_lines(col = "red") +
+tm_layout(frame = FALSE)
 ```
 
-1.	Is LNMEDHVAL significantly spatially autocorrelated?
+Now we can apply the weight matrix that to calculate the global Moran's I.
+```{r global moran}
+# Global Moran's I
 
-Here we use a Monte Carlo approach to test whether our global Moran's I is statistically significant. If the null hypothesis is true, then the probability of drawing the observed data is the same as any other permutation of the zi’s amongst the polygons. Thus, if m just the number if simulated Moran’s-I values exceeding the observed one, and M is the total number of simulations, then the probability of getting the observed Moran’s-I
+# now use that weight matrix to calculate global moran's i for MEDHVAL
+
+global_moran(reg_data$LNMEDINC, reg_data$nb, reg_data$weights)$`I`
+```
+
+Having calculated a global Moran's I, we'll use a Monte Carlo approach to test whether our global Moran's I is statistically significant. If the null hypothesis is true, then the probability of drawing the observed data is the same as any other permutation of the zi’s amongst the polygons. Thus, if m just the number if simulated Moran’s-I values exceeding the observed one, and M is the total number of simulations, then the probability of getting the observed Moran’s-I
 
 or a greater one is
 
 $p = m+1 / M+1$
 
-We can run this test using `moran.mc` in the `spdep` package.
 ```{r global moran test}
 
 # reshuffling test w 999 permutations
 # present Moran's I value, histogram of Moran's I values with all permutations, and p-value
 
-moranMC = spdep::moran.mc(reg_data$LNMEDINC, reg_data_wtmatrix_listw, 999)
+moranMC = global_moran_perm(reg_data$LNMEDINC, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)
 
 moranMC
 ```
 
+Here we visualize the randomly permuted values from the Monte Carlo test. We can see that the calculated global Moran's I is far higher than the distribution of the random values. In fact, it is the highest (observed rank = 1000). It's p-value is < 0.001 and we can therefore reject the null hypothesis.
 ```{r global moran hist}
-moranMCres<-moranMC$res
-hist(moranMCres, freq=10000000, nclass=100)   #Draws distribution of Moran's I's calculated from randomly permuted values
-# Here, we draw a red vertical line at the observed value of our Moran's I
-abline(v=moran(reg_data$LNMEDHHINC, reg_data_wtmatrix_listw, n=length(reg_data_wtmatrix_listw$neighbours), S0=Szero(reg_data_wtmatrix_listw))$`I`, col='red')
+#draws a histogram of our randomly permuted values
+# and adds a red line for our actual moran's i
+
+moranMCres = moranMC$res |>
+              as.data.frame()
+
+colnames(moranMCres) = "col1"
+
+ggplot(moranMCres) +
+  geom_histogram(aes(col1), bins = 100) +
+  geom_vline(xintercept = moranMC$statistic, col = "red") +
+  labs(title = "Histogram of MoranMCres",
+       x = "moranMCres",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
+Additional confirmation of the significance of our Moran's I value can be found by plotting the relationship between LNMEDINC of the block groups and their neighbors. If there were no relationship between block group observations and those of their neighbors, we would not see a clear pattern in the plot below. However, we observe that this is not the case.
 ```{r global moran plot}
-moran.plot(reg_data$LNMEDINC, reg_data_wtmatrix_listw,
-           xlab = 
-            ylab = )
+moran.plot(reg_data$LNMEDINC, nb2listw(reg_data$nb),
+           xlab = "ln(MEDHINC)", 
+            ylab = "Spatial Lag")
 ```
 
 ### Local Moran's I
+The `local_moran` function in `sfdep` allows us to compute LISA statistics for each block group. This function generates the Local Moran statistic as `Ii`. We might also be interested in `Var.Ii`, which tells us how much each block group’s Local Moran Statistic varies from the global mean, and $Pr(z>0)$, which indicates whether the Local Moran Statistic can be considered statistically significant.
+
 For Local Moran’s I results, present the Significance Map and Cluster Map obtained by running the Local Morans’ I. 
 1.	Discuss the results: what are the not significant, high-high, high-low, low-high and low-low areas on the Cluster Map? Where in the city are these areas? 
 ```{r local moran}
@@ -428,9 +434,47 @@ For Local Moran’s I results, present the Significance Map and Cluster Map obta
 
 # local Moran's I analysis with queen weight matrix; print results
 
-lisa = localmoran(reg_data$LNMEDINC, reg_data_wtmatrix_listw)
+lisa = local_moran(reg_data$LNMEDINC, reg_data$nb, reg_data$weights, nsim = 999)
 
 head(lisa)
+```
+
+Now we can examine the local Moran's I values to see if there is significant spatial autocorrelation.
+```{r local moran map}
+# first we need to bind the lisa dataframe to our reg_data dataframe
+
+reg_data = cbind(reg_data, lisa)
+
+tm_shape(reg_data) +
+  tm_fill(style = "fixed", 
+          col = "p_ii", 
+          breaks = c(0,0.001, 0.01, 0.05, 1), 
+          palette = '-viridis',
+          title = "P-Value") +
+  #tm_borders(col = "white",
+   #          lwd = 0.05) +
+  tm_layout(frame = FALSE, main.title = "P-Value")
+```
+
+We can also visualize whether the LISA statistics suggest high or low clustering. [Ugh, fix this wording plz.]
+
+```{r local moran clustering}
+reg_data = reg_data |>
+            mutate(
+                  mean = as.character(mean),
+                  lisa_map = case_when(
+                                  p_ii < 0.05 ~ mean,
+                                  TRUE ~ "Insignificant"
+                                )
+                  )
+
+pal = c("red", "pink", "lightgrey", "lightblue", "blue")
+
+tm_shape(reg_data) +
+  tm_fill(col = "lisa_map", palette = pal, title = "LISA Clusters")+
+  tm_borders(col = "white", lwd = 0.05) +
+  tm_layout(frame = FALSE, main.title = "LISA Clusters")
+
 ```
 
 ## OLS Regression and Assumptions
@@ -446,33 +490,77 @@ a.	Do test results indicate a problem with normality?
 ```{r ols}
 # OLS Regression
 
-# Print results
-# Save residuals in new column
-# Create weighted residuals using queen matrix
+reg = lm(formula=LNMEDINC ~ LNMEDHVAL + PCTVACANT, data = reg_data)
+
+summary(reg)
+```
+Here we run a log likelihood test.
+```{r log liklihood}
+logLik(reg)
+```
+To test for heteroscedasticity, we will run three tests: 
+
+ 1) the Breusch-Pagan test
+```{r bp test}
+bptest(reg, studentize = FALSE)
+```
+
+ 2) the Koenker-Bassett test (also known as the Studentized Breusch-Pagan test)
+```{r kb test}
+bptest(reg, studentize = TRUE)
+```
+
+ 3) the White test
+```{r white test}
+white_test(reg)
+```
+
+Finally, we will run the Jarque-Bera test to assess whether the residuals of our regression are normal.
+```{r jb test}
+jarque.bera.test(reg$residuals)
 ```
 
 ### Scatterplot of Residuals
 ii.	Present the scatterplot of OLS_RESIDU by WT_RESIDU and describe the results.
 1.	Are the results (based on the value and significance level of ρ – that’s referred to as Slope b in the results) indicative of significant spatial autocorrelation?
+
+Now, let’s generate standardized residuals, which are OLS Model residuals divided by an estimate of their standard deviation, and map them. Visually, it certainly seems that there’s spatial autocorrelation in the residuals, with some higher values clustered in the northeast and northwest of the city, and some lower values clustered in north Philadelphia and downtown.
 ```{r ols resids}
-# Plot OLS residuals against queen neighbors
+reg_data = reg_data |>
+              mutate(stand_resids = rstandard(reg),
+                     spatial_lag = st_lag(stand_resids, 
+                                             nb, 
+                                             weights))
 
-# set weighted residuals are independent variable, residuals are dependent variable
-# visualize w scatterplot
-# make sure to find slope of line of best fit--this will be coefficient
-  # note that this is the same thing as running a simple regression with residuals as dependent variable and weighted resids as independent variable. The Beta coefficient of the beta residuals in that regression will be the same as the slope of this line of best fit
+tm_shape(reg_data)+
+  tm_fill(col = 'stand_resids', 
+          style = 'quantile', 
+          title = 'Standardized OLS Residuals', 
+          palette ='Blues')+
+  tm_layout(frame = FALSE, 
+            title = 'Standardised OLS Residuals')
+```
+However, a visual assessment is not sufficient, and we will test the presence of spatial autocorrelation in two ways: 1) by regressing residuals on their queen neighbors, and 2) by looking at the Moran’s I of the residuals.
+
+First, let’s regress the OLS standardized residuals on the spatial lag of the OLS residuals (i.e., OLS residuals at the queen neighbors). We can see that the beta coefficient of the lagged residuals (sometimes also referred to as rho or lambda) is significant and positive (0.598, p<0.0001), meaning that there’s a significant level of spatial autocorrelation in the residuals. This is consistent with Moran’s I of the residuals we see below.
+```{r reg resids on nn}
+resids_lm = lm(formula = stand_resids ~ spatial_lag, data = reg_data)
+
+summary(resids_lm)
+```
+### Moran's I Significance
+
+Once again, we can use the Monte Carlo simulation to generate a Moran's I statistics and a pseudo p-value.
+```{r stand resids mc}
+global_moran_perm(reg_data$stand_resids, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)
+```
+It is strongly apparent that spatial autocorrelation exists among the regression residuals of the OLS Model. The p-value is very small indicating that Moran’s I is significant. Because there’s clearly spatial autocorrelation in OLS residuals, the OLS Model is inappropriate and we need to consider another method. Here, we will attempt to run the Spatial Lag Model, the Spatial Error Model, and Geographically Weighted Regression.
+```{r stand resids scatter}
+moran.plot(reg_data$stand_resids, nb2listw(reg_data$nb),
+           xlab = "Standardized Residuals", 
+            ylab = "Spatial Lag")
 ```
 
-### Moran's I Scatterplot
-iii.	Present the Moran’s I scatterplot and results from the 999 permutations for OLS regression residuals.
-1.	Are you seeing significant spatial autocorrelation in your OLS residuals, and is this problematic?
-```{r moran scatter}
-# Calculate Moran's I of OLS regression residuals
-
-# test whether OLS regression residuals are spatially autocorrelated
-# check significance of Moran's I here by running 999 permutations
-# print scatterplot of results & significance test
-```
 
 ## Spatial Lag and Spatial Error Regression
 
@@ -485,12 +573,50 @@ a.	Compare these results to OLS results.
 4.	Compare the Spatial Lag regression and OLS regression models based on the Akaike Information Criterion/Schwarz Criterion, the Log Likelihood, and the Likelihood Ratio Test. 
 
 ```{r spatial lag}
-# Spatial Lag model
+spatial_lag_reg = lagsarlm(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))
 
-# using queen weights again, calculate spatial lag for med_h_val
-# save residuals in a new column
-# also save predicted value 
+sumslr = summary(spatial_lag_reg)
 ```
+As with our OLS before, we will calculate the likelihood ratio for our spatial lag model.
+```{r likelihood ratio}
+LR.Sarlm(spatial_lag_reg, reg) #Here lagreg is the SL output; reg is the OLS output
+```
+
+To test for heteroscedasticity, we will once again run two of the three tests run above: 
+
+ 1) the Breusch-Pagan test
+```{r bp test lag reg}
+bptest.Sarlm(spatial_lag_reg, studentize = FALSE)
+```
+
+ 2) the Koenker-Bassett test (also known as the Studentized Breusch-Pagan test)
+```{r kb test lag reg}
+bptest.Sarlm(spatial_lag_reg, studentize = TRUE)
+```
+
+And, again, the Jarque-Bera test to assess whether the residuals of our regression are normal.
+```{r jb test lag reg}
+jarque.bera.test(spatial_lag_reg$residuals)
+```
+
+```{r spatial lag stnad resids map}
+reg_data = reg_data |>
+              mutate(
+                spatial_lag_resids = lagsarlm(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))$residuals
+              )
+
+tm_shape(reg_data)+
+  tm_fill(col = 'spatial_lag_resids', 
+          style = 'quantile', 
+          title = 'Spatial Lag Residuals', 
+          palette ='Blues')+
+  tm_layout(frame = FALSE)
+```
+
+```{r spatial lag stand resids mc}
+global_moran_perm(spatial_lag_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)
+```
+
 
 5.	Present the Moran’s I scatterplot of spatial lag regression residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals?
 6.	Overall, which model is doing better based on all of these criteria?
@@ -509,12 +635,56 @@ a.	Compare these results to OLS results.
 3.	State whether, based on the Breusch-Pagan test, the spatial lag regression residuals are still heteroscedastic? 
 4.	Compare the Spatial Error regression and OLS regression based on the Akaike Information Criterion/Schwarz Criterion, the Log Likelihood, and the Likelihood Ratio Test. 
 
+
 ```{r spatial error}
-# Spatial Error model
-# using queen weights again, calculate spatial error for med_h_val
-# save residuals in a new column
-# also save predicted value 
+spatial_error_reg = errorsarlm(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, 
+                               data = reg_data, 
+                               nb2listw(reg_data$nb))
+
+summary(spatial_lag_reg)
+
+# NOTE: I AM GETTTING SLIGHTLY DIFFERENT VALUES THAN EUGENE HERE. COULD IT BE THE RESULT OF RANDOMNESS?
 ```
+As with our OLS before, we will calculate the likelihood ratio for our spatial lag model.
+```{r error likelihood ratio}
+LR.Sarlm(spatial_error_reg, reg) #Here lagreg is the SL output; reg is the OLS output
+```
+
+To test for heteroscedasticity, we will once again run two of the three tests run above: 
+
+ 1) the Breusch-Pagan test
+```{r bp test error reg}
+bptest.Sarlm(spatial_error_reg, studentize = FALSE)
+```
+
+ 2) the Koenker-Bassett test (also known as the Studentized Breusch-Pagan test)
+```{r kb test error reg}
+bptest.Sarlm(spatial_error_reg, studentize = TRUE)
+```
+
+And, again, the Jarque-Bera test to assess whether the residuals of our regression are normal.
+```{r jb test error reg}
+jarque.bera.test(spatial_error_reg$residuals)
+```
+
+```{r spatial error stnad resids map}
+reg_data = reg_data |>
+              mutate(
+                spatial_error_resids = errorsarlm(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))$residuals
+              )
+
+tm_shape(reg_data)+
+  tm_fill(col = 'spatial_error_resids', 
+          style = 'quantile', 
+          title = 'Spatial Error Residuals', 
+          palette ='Blues')+
+  tm_layout(frame = FALSE)
+```
+
+```{r spatial error stand resids mc}
+global_moran_perm(spatial_error_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)
+```
+
 
 5.	Present the Moran’s I scatterplot of spatial error regression residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals?
 6.	Overall, which model is doing better based on all of these criteria?
@@ -536,41 +706,230 @@ a.	Which model has better (lower) Akaike Information Criterion and Schwarz Infor
 i.	Present GWR results from the _supp table (call this Table 4)
 1.	Compare the (overall) R-squared of the GWR regression with the R-squared of the OLS regression. State which regression method seems to be doing a better job of explaining the variance in the dependent variable.
 2.	Compare the Akaike Information Criteria of GWR with those of OLS, Spatial Lag and Spatial Error models. Which model seems to be doing a better job based on that (remember, the lower the Akaike Information Criterion, the better the fit).
-```{r gwr}
-# Geographically Weighted Regression
 
-# run geographically weighted regression model uising:
-  # lnnbelpov
-  # pctbachmor
-  # pctsingles
-  # pctvacant
-# make sure to produce results as shapefile
-# kernel type should be "adaptive"; bandwidth type should be "AICc"
-# print out:
-  # supplemental table
-  # choropleth map of local R-squared values
+Here we create an adaptive bandwidth.
+```{r adaptive bandwidth est}
+adapt_bandwidth_est = GWmodel::bw.gwr(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, 
+                                data = reg_data |> sf::as_Spatial(),
+                                approach = 'AIC', 
+                                kernel = 'gaussian', 
+                                adaptive = TRUE)
+
+adapt_bandwidth_est = gwr.sel(formula=LNMEDINC~LNMEDHVAL+PCTVACANT, 
+                              data = reg_data |> sf::as_Spatial(),
+                              method = "aic",
+                              adapt = TRUE)
+```
+
+Here we create a fixed bandwidth.
+```{r fixed bandwidth est}
+fixed_bandwidth_est = gwr.sel(formula=LNMEDINC~LNMEDHVAL+PCTVACANT, 
+                              data = reg_data |> sf::as_Spatial(),
+                              method = "aic",
+                              adapt = FALSE)
+
+fixed_bandwidth_est
+```
+Here we run a basic GWR with an adaptive bandwidth.
+```{r adaptive bw gwr}
+gwrmodel_adaptive = gwr(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT,
+                        data = reg_data |> sf::as_Spatial(),
+                        adapt = adapt_bandwidth_est, #adaptive bandwidth determined by proportion of observations accounted for
+                        gweight = gwr.Gauss,
+                        se.fit = TRUE, #to return local standard errors
+                        hatmatrix = TRUE)
+
+gwrmodel_adaptive
+```
+
+Here we run a basic GWR with a fixed bandwidth.
+```{r fixed bw gwr}
+# Perform a basic GWR
+gwrmodel_fixed = gwr(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT,
+              data = reg_data |> sf::as_Spatial(),
+              bandwidth = fixed_bandwidth_est, #adaptive bandwidth determined by proportion of observations accounted for
+              gweight = gwr.Gauss,
+              se.fit = TRUE, #to return local standard errors
+              hatmatrix = TRUE)
+
+gwrmodel_fixed
+```
+We can look at a summary of the coefficients of the local regressions, stored in the SDF object within thegwrmodel. Note in particular the minimum and maximum values of the Local $R^2$ (0.05789 - 0.75169). There are no negative values, meaning that this output, unlike the output we get in some versions of ArcGIS Pro, is correct.
+
+### Local GWR Results
+
+```{r local gwr summary}
+summary(gwrmodel_adaptive$SDF)
+```
+We can also map the standardized coefficients. The higher the absolute value of the ratio between the coefficient and the standard error, the more plausible it is that the relationship between the predictor and the dependent variable is significant at the location.
+```{r gwr dataframe and map}
+gwr_adaptive_results = as.data.frame(gwrmodel_adaptive$SDF)
+
+gwr_fixed_results = as.data.frame(gwrmodel_fixed$SDF)
+
+reg_data = reg_data |>
+              mutate(
+                coef_lnmedhval_adapt_stand = gwr_adaptive_results$LNMEDHVAL / gwr_adaptive_results$LNMEDHVAL_se,
+                coef_pctvacant_adapt_stand = gwr_adaptive_results$PCTVACANT / gwr_adaptive_results$PCTVACANT_se,
+                gwr_adapt_resids = gwr_adaptive_results$gwr.e,
+                gwr_adapt_r2 = gwr_adaptive_results$localR2,
+                coef_lnmedhval_fixed_stand = gwr_fixed_results$LNMEDHVAL / gwr_fixed_results$LNMEDHVAL_se,
+                coef_pctvacant_fixed_stand = gwr_fixed_results$PCTVACANT / gwr_fixed_results$PCTVACANT_se,
+                gwr_fixed_resids = gwr_fixed_results$gwr.e,
+                gwr_fixed_r2 = gwr_fixed_results$localR2,
+              )
+
+coef_lnmedhval_adapt_stand_map = tm_shape(reg_data)+
+                                    tm_fill(col='coef_lnmedhval_adapt_stand', 
+                                            breaks=c(-Inf, -6, -4, -2, 0, 2, 4, 6, Inf), 
+                                            title='Standardized coefficient of LNMEDHVAL', 
+                                            palette ='-RdBu')+
+                                    tm_layout(frame=FALSE, 
+                                              main.title = 'Median House Value (Log)',
+                                              title = "Adaptive GWR")
+
+coef_pctvacant_adapt_stand_map = tm_shape(reg_data)+
+                                    tm_fill(col='coef_pctvacant_adapt_stand', 
+                                            breaks=c(-Inf, -6, -4, -2, 0, 2, 4, 6, Inf), 
+                                            title='Standardized coefficient of PCTVACANT', 
+                                            palette='-RdBu')+
+                                    tm_layout(frame=FALSE, 
+                                              main.title = 'Percentage of Housing Vacant',
+                                              title = "Adaptive GWR")
+
+tmap_arrange(coef_lnmedhval_adapt_stand_map, coef_pctvacant_adapt_stand_map, ncol=2)
+```
+
+### Local GWR R-Squared Results
+```{r gwr rsquared}
+tm_shape(reg_data)+
+  tm_fill(col = 'gwr_adapt_r2',  
+          breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8), 
+          n = 5, 
+          palette = 'Blues',
+          title = "R Squared")+
+  tm_layout(frame = FALSE, 
+  main.title = 'Local R Squared')
+```
+
+### Local GWR Residuals Results
+
+```{r gwr resids}
+tm_shape(reg_data)+
+  tm_fill(col = 'gwr_adapt_resids',  
+          style = 'quantile',
+          palette = 'Blues', 
+          title = "Residuals")+
+  tm_layout(frame = FALSE, 
+  main.title = 'Residuals',
+  title = "Adaptive GWR")
 ```
 
 ### Moran's I Scatterplot of GWR Residuals
 ii.	Present the Moran’s I scatterplot of GWR residuals. Does there seem to be less spatial autocorrelation in these residuals than in OLS residuals? What about the Spatial Lag and Spatial Error Residuals.
 ```{r gwr moran}
-# Moran's I of GWR Residuals
+moran.plot(reg_data$gwr_adapt_resids, nb2listw(reg_data$nb),
+           xlab = "Standardized Residuals", 
+            ylab = "GWR Residuals (Adaptive)")
 
-# once again, run moran's I for the GWR residuals; test w 999 permutations
-# print scatterplot & summary table of significance test
+
 ```
 
-### Local Regression Results
-iii.	Be sure to discuss local regression results, as is done on the slides. Are there locations in the city where the relationships between each of the predictors and the dependent variable possibly significant?
-```{r local reg}
-# Local Regression Results
+## Model Comparison
+We can do the following to compare all 4 models:
+1. Look at the Moran’s I of the residuals from each model and choose the model with the lowest (absolute) Moran’s I
+2. Compare the AIC values from each model and choose the model with the lowest value
+In addition, we can do the following to compare the Spatial Lag Model to OLS:
+1. Compare the log likelihoods; the model with the higher value is the better one.
+2. Examine the results of the likelihood ratio test; if it’s significant, the Spatial Lag Model is better than OLS.
+In addition, we can do the following to compare the Spatial Error Model to OLS:
+1. Compare the log likelihoods; the model with the higher value is the better one.
+2. Examine the results of the likelihood ratio test; if it’s significant, the Spatial Error Model is better than OLS.
 
-# Follow instructions from class slides to obtain local regression results. Specifically, present maps of the ratio of the beta coefficients and the standard error estimates.
-# Use dark red when the ratio is < -2, pink when the ratio is between 0 and -2, light blue when the ratio is between 0 and 2, and dark blue when the ratio is > 2.
+
+Note that the global R^2 for our GWR here is not exactly the same as in the actual function output; we're calculating it [based on the source code](https://stackoverflow.com/questions/43927662/return-the-global-r2-of-a-geographically-weighted-regression-gwr-in-r) so that it will be automatically update in the table.
+
+```{r model comp}
+model = c("OLS", "Spatial Lag", "Spatial Error", "GWR")
+global_moran = c(global_moran_perm(reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)$statistic,
+                 global_moran_perm(spatial_lag_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)$statistic,
+                 global_moran_perm(spatial_error_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)$statistic,
+                 global_moran_perm(reg_data$gwr_adapt_resids, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)$statistic)
+  
+aic = c(stepAIC(reg)$anova$AIC,
+        spatial_lag_reg$AIC_lm.model, #there's a difference between AIC and AIC for the lm for both this and spatial error
+        spatial_error_reg$AIC_lm.model, #not sure why that is--might have to ask Eugene
+        #also, why are these both the same?? they shouldn't be...
+        gwrmodel_adaptive$results$AICh)
+
+log_lik = c(logLik(reg), logLik(spatial_lag_reg), NA, NA)
+
+lik_ratio = c(NA, LR.Sarlm(spatial_lag_reg, reg)$statistic, LR.Sarlm(spatial_error_reg, reg)$statistic, NA)
+  
+lik_rat_p = c(NA, LR.Sarlm(spatial_lag_reg, reg)$p.value, LR.Sarlm(spatial_error_reg, reg)$p.value, NA)
+
+r2 = c(summary(reg)$r.squared, NA, NA, (1 - (gwrmodel_adaptive$results$rss/gwrmodel_adaptive$gTSS))) #am I meant to be using r squared or ADJUSTED r squared?
+                                            # calculating global r squared for gwr based on: https://stackoverflow.com/questions/43927662/return-the-global-r2-of-a-geographically-weighted-regression-gwr-in-r
+
+comp = cbind(model,
+             round(global_moran, 3),
+             round(aic, 1),
+             round(log_lik, 4),
+             round(lik_ratio, 1),
+             lik_rat_p,
+             round(r2, 4)) |>
+      as.data.frame()
+
+colnames(comp) = c("Model", "Moran's I", "AIC", "Log Likelihood", "Likelihood Ratio", "L.R. P-Value", "R^2")
+
+table_out = comp |>
+        gt() |>
+        tab_header(
+          title = md("**Model Comparison**"))
+     
+#print output
+table_out
 ```
 
-### Local R-Squared Results
-iv.	Present and discuss a choropleth map of local R-squared results. 
+
+Eugene says: "Lastly, we can also do the following to compare GWR to OLS:
+1. Compare the R2 from OLS with the Quasi-global R2 from GWR; the model with the higher value is the better one.
+2. Examine whether there’s spatial variability in standardized coefficients or local R2 values. If there is, it might mean that a single global regression might not capture the varying spatial relationships between the dependent variable and the predictors."
+
+However, I don't think means that for #2 we can look at *local* $R^2$ or coefficients, because I don't think those exist for an OLS model---only for a spatial model. We should ask about this, though.
+
+I also cannot figure out why that last map isn't rendering right. It does in mapview!
+```{r ols vs gwr map}
+gwr_local_r2 = tm_shape(reg_data)+
+                          tm_fill(col = 'gwr_adapt_r2', 
+                                  style = 'quantile', 
+                                  title = 'GWR Local R^2', 
+                                  palette = 'Blues')+
+                          tm_layout(frame = FALSE)
+
+gwr_coef_lnmedinc = tm_shape(reg_data)+
+                        tm_fill(col = 'coef_lnmedhval_adapt_stand', 
+                                style = 'quantile', 
+                                title = 'GWR Coef., LNMEDINC', 
+                                palette = 'Blues')+
+                        tm_layout(frame = FALSE)
+
+
+gwr_coef_pctvacant = tm_shape(reg_data)+
+                        tm_fill(col = 'coef_pctvacant_adapt_stand', 
+                                style = 'quantile', 
+                                title = 'GWR Coef., LNMEDINC', 
+                                palette = 'Blues')+
+                        tm_layout(frame = FALSE)
+
+# mapview(reg_data, zcol = 'coef_pctvacant_adapt_stand')
+
+tmap_arrange(gwr_local_r2,
+             gwr_coef_lnmedinc,
+             gwr_coef_pctvacant,
+             ncol = 3)
+```
+
 
 # Discussion
 a)	In a couple sentences, recap what you did in the paper and your findings. Discuss what conclusions you can draw, and which of the four regression methods (OLS, Spatial Lag, Spatial Error, GWR) was the best, based on the results. 
