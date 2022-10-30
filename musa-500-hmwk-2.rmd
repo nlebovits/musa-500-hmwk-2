@@ -133,7 +133,6 @@ According to the HW 1, three of above five OLS assumptions were violated. First,
 
 ii.	State that when the data has a spatial component, the assumption that your errors are random/independent often doesn’t hold
 1.	Indicate that you can test the assumption in (ii) above by examining the spatial autocorrelation of the residuals using Moran’s I.
-2.	Indicate that another way to test OLS residuals for spatial autocorrelation is to regress them on nearby residuals (here, these nearby residuals are residuals at neighboring block groups, as defined by the Queen matrix). 
 
 When residuals contain a systematic pattern, the assumption of randomness of residuals is not met. Specifically, if we have spatially autocorrelated OLS residuals, there is systematic under-prediction or over-prediction in certain parts of the study region; furthermore, the significance estimates for the β coefficients in OLS may be incorrect (inflated). There are a couple ways to check for spatial autocorrelation of the OLS residuals, though the first thing to do might be to map the residuals. We want the map of the residuals to look random, and it implies that our model is not spatially autocorrelatedAfter looking at the residual maps, we would want to	Compute the Moran’s I of the residuals. Ideally, we will see a Moran’s I close to 0, there is an obvious problem with spatial autocorrelation of residuals.
 
