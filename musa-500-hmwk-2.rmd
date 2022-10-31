@@ -174,8 +174,6 @@ The Jarque-Bera test in GeoDa examines the Null Hypothesis that the residuals ar
 ## Spatial Lag and Spatial Error Regression
 
 ### Spatial Lag Regression
-ii.	Describe the method of spatial lag regression in several sentences. 
-1.	Present the model equation for the spatial lag model. 
 
 In simpler terms, we can understand spatial lag through the analogy of this Stats Wizard Penguin (SWP) and his Inept Companions (ICs): although the SWP may have a stats wizardry quotient (SWQ) of over 9,000, its spatial lag (i.e., the average value of the SWQs of its neighboring ICs) is 0 because all the neighboring penguins know exactly 0 about statistics. (Crucially, we should use a symmetrical matrix of statistically incompetent penguins, as this is a key requirement of spatial lag and spatial error regressions).
 ```{r tweet embed, echo = F}
@@ -185,14 +183,34 @@ tweetrmd::tweet_embed("https://twitter.com/schumacherbj/status/15842782665461309
                       widget_type = "video")
 ```
 
+
+```
+ii.	Describe the method of spatial lag regression in several sentences. 
+1.	Present the model equation for the spatial lag model. 
 a.	Instead of writing X1…X4, write the names of the actual predictors that you’re using in this assignment (e.g., PCTVACANT)
 b.	Explain what each term is (the β coefficients, ρ, ε, etc)
+```
+
+Spatial Lag Model assumes that the value of the dependent variable at one location is associated with the values of that variable in nearby locations. ‘Nearby’ is as defined by the weights matrix W (rook, queen, within a certain distance of one another). In other words, Spatial Lag Model includes the spatial lag of the dependent variable as a predictor.
+In this assignment, our equation for the Spatial Lag Model is as follow:
+$$ LNMEDHVAL = ρWy\;+\;β_0\;+\;LNNBELPOVβ_1\;+\;PCTBACHMORβ_2\;+\;PCTSINGLESβ_3\;+\;PCTVACANTβ_4\;+\;ε $$
+Here, $ρ$ is the coefficient of the $y-lag$ variable $Wy$, just as $β_1$ is the coefficient of the variable $LNNBELPOV$, and $ε$ is residual. 
+
 
 ### Spatial Error Regression
+
+```
 iii.	Describe the method of spatial error regression in several sentences. 
 1.	Present the model equation for the spatial error model. 
 a.	Instead of writing X1…X4, write the names of the actual predictors that you’re using in this assignment (e.g., PCTVACANT)
 b.	Explain what each term is (the β coefficients, λ, ε, u, etc)
+```
+
+Spatial Error Model assumes that the residual at one location is associated with residuals at nearby locations. ‘Nearby’ is as defined by the weights matrix W (rook, queen, within a certain distance of one another). As for this, we take two-step regression. First, we run our OLS regression, where we regress Y on the predictors
+Secondly, we regress residuals on the nearest neighbor residuals, thereby filtering the spatial information out of the OLS residuals and decomposing the residuals (ε) into two parts: one with a spatial pattern (λWε) and one which is simply random noise (u). 
+The part with a spatial pattern can be thought of as some variable with a spatial component missing from the (first) regression
+Note: λ is constrained between -1 and 1
+
 
 ### Assumptions for Spatial Lag and Error Regression
 Indicate that the assumptions that are needed for OLS are still needed for both spatial lag and spatial error regression models (except that of spatial independence of observat
