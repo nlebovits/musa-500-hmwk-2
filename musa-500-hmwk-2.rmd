@@ -206,10 +206,8 @@ a.	Instead of writing X1…X4, write the names of the actual predictors that you
 b.	Explain what each term is (the β coefficients, λ, ε, u, etc)
 ```
 
-Spatial Error Model assumes that the residual at one location is associated with residuals at nearby locations. ‘Nearby’ is as defined by the weights matrix W (rook, queen, within a certain distance of one another). As for this, we take two-step regression. First, we run our OLS regression, where we regress Y on the predictors
-Secondly, we regress residuals on the nearest neighbor residuals, thereby filtering the spatial information out of the OLS residuals and decomposing the residuals (ε) into two parts: one with a spatial pattern (λWε) and one which is simply random noise (u). 
-The part with a spatial pattern can be thought of as some variable with a spatial component missing from the (first) regression
-Note: λ is constrained between -1 and 1
+Spatial Error Model assumes that the residual at one location is associated with residuals at nearby locations. ‘Nearby’ is as defined by the weights matrix W (rook, queen, within a certain distance of one another). As for this, we take two-step regression. First, we run our OLS regression, where we regress Y on the predictors.
+Secondly, we regress residuals on the nearest neighbor residuals, thereby filtering the spatial information out of the OLS residuals and decomposing the residuals $ε$ into two parts, one with a spatial pattern $λWε$ and one which is simply random noise $u$. The part with a spatial pattern can be thought of as some variable with a spatial component missing from the first OLS regression.
 
 
 ### Assumptions for Spatial Lag and Error Regression
