@@ -169,7 +169,7 @@ The Jarque-Bera test in GeoDa examines the Null Hypothesis that the residuals ar
 ##-----------------------------min done end 221029-------------------------------------------------------------------------------------------##
 
 
-##-----------------------------min doing part2 start ----------------------------------------------------------------------------------------##
+##-----------------------------min done start 221105----------------------------------------------------------------------------------------##
 
 ## Spatial Lag and Spatial Error Regression
 
@@ -207,26 +207,57 @@ b.	Explain what each term is (the β coefficients, λ, ε, u, etc)
 ```
 
 Spatial Error Model assumes that the residual at one location is associated with residuals at nearby locations. ‘Nearby’ is as defined by the weights matrix W (rook, queen, within a certain distance of one another). As for this, we take two-step regression. First, we run our OLS regression, where we regress Y on the predictors.
-Secondly, we regress residuals on the nearest neighbor residuals, thereby filtering the spatial information out of the OLS residuals and decomposing the residuals $ε$ into two parts, one with a spatial pattern $λWε$ and one which is simply random noise $u$. The part with a spatial pattern can be thought of as some variable with a spatial component missing from the first OLS regression.
+$$ LNMEDHVAL = β_0\;+\;LNNBELPOVβ_1\;+\;PCTBACHMORβ_2\;+\;PCTSINGLESβ_3\;+\;PCTVACANTβ_4\;+\;ε $$
+Secondly, we regress residuals on the nearest neighbor residuals, thereby filtering the spatial information out of the OLS residuals and decomposing the residuals $ε$ into two parts, one with a spatial pattern $λWε$ and one which is simply random noise $u$. 
 
+$$ ε  = λWε\;+\; u$$
+The part with a spatial pattern can be thought of as some variable with a spatial component missing from the first OLS regression.
+$$ LNMEDHVAL = β_0\;+\;LNNBELPOVβ_1\;+\;PCTBACHMORβ_2\;+\;PCTSINGLESβ_3\;+\;PCTVACANTβ_4\;+\; λWε\;+\; u $$
 
 ### Assumptions for Spatial Lag and Error Regression
-Indicate that the assumptions that are needed for OLS are still needed for both spatial lag and spatial error regression models (except that of spatial independence of observat
+
+```
+Indicate that the assumptions that are needed for OLS are still needed for both spatial lag and spatial error regression models (except that of spatial independence of observation
+```
+
+As for the Spatial Regression model, we still have some of assumptions. First of all, the relationship between the independent variable and each of the dependent variables has to be always linear. The second assumption is that The normality of residuals, and there should not be multicollinearity.
+
 
 ### Goals of Spatial Lag and Error Regression
+```
 State the goal of spatial lag and spatial error regression (i.e., what you hope will happen with regression residuals as a result of using these methods). 
+```
+
+Goal of Spatial Regression is to take consideration the possibility of spatial dependency in the residuals. By using this method, we want to our model to be no longer spatially autocorrelated and less heteroscedasticity.
+
 
 ### Regression Performance Compared
+```
 vi.	Mention that you will compare the results of spatial lag regression with OLS and the results of spatial error regression with OLS, and will decide whether the spatial models perform better than OLS based a number of criteria. 
 1.	These criteria include
 a.	Akaike Information Criterion/Schwarz Criterion;
 b.	Log Likelihood; 
 c.	Likelihood Ratio Test
 2.	Be sure to describe what each of the above criteria is, and how you decide which model is better based on this criterion (state any null/alternative hypotheses, if applicable).
+
 3.	State that another way of comparing OLS results with spatial lag and spatial error results is by looking at the Moran’s I of regression residuals. 
 a.	Indicate how you would decide which model is better based on this criterion.
+```
+A number of measures that can be used for model comparability first one is Akaike Information Criterion (AIC) and Schwartz Criterion (SC). AIC and SC are measures of the goodness of fit of an estimated statistical model. They are relative measures of the information that is lost when a given model is used to describe reality and can be said to describe the trade-off between precision and complexity of the model. The equation of AIC is the following : $$AIC = 2k - 2ln(\hat{L})$$
+Given a set of candidate models for the data, the preferred model is the one with the minimum AIC value. Thus, AIC rewards goodness of fit (as assessed by the likelihood function), but it also includes a penalty that is an increasing function of the number of estimated parameters. The penalty discourages overfitting, which is desired because increasing the number of parameters in the model almost always improves the goodness of the fit.
 
-##-----------------------------min doing part2 end ----------------------------------------------------------------------------------------##
+Second option is to check Log likelihood, it is associated with the maximum likelihood method of fitting a statistical model to the data and estimating model parameters. Maximum likelihood picks the values of the model parameters that make the data more likely than any other values of the parameters would make them. Thus, the higher the log likelihood, the better the model fit. This comparison Should be used for nested models only. OLS is a special case of spatial lag and spatial error models. So we can compare OLS with Spatial and spatial lag model, but we cannot use the log likelihood to compare spatial lad and spatial error because they are not a special case of each other.
+
+Also, Likelihood ratio test could be another tool for comparison OLS model with the spatial model. Null Hypothesis of this test is Spatial model is not a better specification than the OLS model. If p<0.05, we reject the null hypothesis, and state that the spatial lag (error) model is doing a better job than the OLS model
+
+We can use Moran's I to figure out which model is better between OLS and spatial lag and spatial error. Firstly, run OLS regression and examine residuals for spatial autocorrelation (Moran’s I). If there is no significant spatial autocorrelation in the residuals, stop. If there is significant spatial autocorrelation in residuals, we need to look at the the Lagrange Multiplier (lag) and the Lagrange Multiplier (error), which tells you whether you should run a spatial regression or spatial error model. First, look at If neither of LM is significant, then OLS is good enough. If Lagrange Multiplier (lag) is significant and Lagrange Multiplier (error) is not, then run the spatial lag model. If Lagrange Multiplier (error) is significant and Lagrange Multiplier (lag) is not, then run the spatial error model
+If both are significant (as here), look at Robust LM (lag) and Robust LM (error). Choose the one that is more significant, which has a lower p-value or higher test statistic value and run that model.
+
+
+##-----------------------------min done end 221105----------------------------------------------------------------------------------------##
+
+##-----------------------------min doing start--------------------------------------------------------------------------------------------##
+
 
 ## Geographically Weighted Regression
 
@@ -250,6 +281,10 @@ Mention that the OLS assumptions still hold in GWR.
 
 ### GWR and P-Values
 Indicate why p-values are not part of the GWR output.
+
+
+##-----------------------------min doing end--------------------------------------------------------------------------------------------##
+
 
 ## Tools
 - List packages for spatial lag & spatial error
