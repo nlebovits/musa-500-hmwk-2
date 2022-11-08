@@ -262,13 +262,35 @@ If both are significant (as here), look at Robust LM (lag) and Robust LM (error)
 ## Geographically Weighted Regression
 
 ### Simpson's Paradox and Local Regression
+```
 Introduce GWR by talking about the concepts of Simpson’s paradox and local regression.
+```
+Simpson’s Paradox is a statistical phenomenon where an association between two variables in a population emerges, disappears or reverses when the population is divided into sub-populations. All of OLS Regression, Spatial Lag Regression Spatial Error Regression assume spatial stationarity that modeled relationships are constant across space. In spatial statistics, stationarity equals the homogeneity of an effect, or, that a process works the same regardless of where you observe the process, it is necessary assumption, but likely not true in practice. For example, higher home values might be correlated with higher crime rates in some locations and lower crime rates in some others. Geographically Weighted Regression is to separate area into multiple locations and conducting multiple local regression instead of having a single, global regression.
 
 ### GWR Equations
+```
 Present the GWR equations and explain them in your own words
+```
+
+OLS models are run to determine the global regression coefficients($β$) for the independent variables is following:
+$$y_i = β_0 + \displaystyle\sum_{k=1}^{n}{β_kx_{ik}} + ε_i$$
+
+where $y_i$ is the $ith$ observation of the  dependent variable, $x_{ik}$ is the $ith$ observation of the $kth$ independent variable, the $ε_i$s are independent normally distributed error terms with zero means, and each $β_k$ must be determined from a sample of n observations. Usually the least squares method is used to estimate the $β_n$s. Using matrix notation this may be expressed as follows:
+$$\hat{β} = (x^tx)^{-1}x^ty$$. 
+where the independent observations are the columns of $x$ and the dependent observations are the single column vector $y$. The column vector $\hat{β}$ contains the coefficient estimates.  Each of these  estimates can be thought of as a “rate of change” between one of the independent variables and the dependent variable.
+
+Once the independent variables that you wish to retain in the model are identified, and there is a theoretical basis for thinking that the relationships may differ by space, GWR may be an appropriate next step. The regression models that underlie GWR. GWR is a relatively simple technique that extends the traditional regression framework of equation by allowing local variations in rates of change so that the coefficients in the model rather than  being global estimates are specific to a location $i$. The regression equation is then:
+
+$$y_i = β_{i0} + \displaystyle\sum_{k=1}^{n}{β_{ik}x_{ik}} + ε_i$$
+where $β_{ik}$ is the value of the $kth$ parameter at location $i$. Using a  weighted least squares approach to calibrating regression models, different  emphases can be placed on different observations in generating the estimated parameters. In ordinary least squares, the sum of the squared differences of predicted and actual $y_i$s is minimized by the coefficient estimates. In weighted least squares a weighting factor $w$, is  applied to each squared difference  before minimizing, so that the inaccuracy of some predictions  carries more of a penalty  than others.  If $w$ is the diagonal matrix of $w_i$s. then the estimated coefficients satisfy 
+$$\hat{β} = (x^twx)^{-1}x^twy$$
+In GWR, weighting an observation in accordance with its proximity to $i$ would allow an  estimation of $β_{ik}$ to  be made that  meets  the  criterion of “closeness of calibration points” set out above. Note that usually in weighted regression models the values of $w_i$ are constant, so that only one calibration has to be carried  out  to  obtain a set of coefficient estimates, but in  this  case w varies with i so that a  different  calibration exists for every point in the study area. In this case, the parameter estimation formula could be written more generally as
+$$\hat{β}_i = (x^tw_ix)^{-1}x^tw_iy$$
 
 ### Running Local Regression
+```
 Talk about how local regression is run
+```
 
 ### Bandwidth (Adaptive vs. Fixed)
 Discuss the concept of bandwidth, and talk about adaptive vs. fixed bandwidth.
