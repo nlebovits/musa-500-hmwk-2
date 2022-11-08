@@ -177,10 +177,10 @@ The Jarque-Bera test in GeoDa examines the Null Hypothesis that the residuals ar
 
 In simpler terms, we can understand spatial lag through the analogy of this Stats Wizard Penguin (SWP) and his Inept Companions (ICs): although the SWP may have a stats wizardry quotient (SWQ) of over 9,000, its spatial lag (i.e., the average value of the SWQs of its neighboring ICs) is 0 because all the neighboring penguins know exactly 0 about statistics. (Crucially, we should use a symmetrical matrix of statistically incompetent penguins, as this is a key requirement of spatial lag and spatial error regressions).
 ```{r tweet embed, echo = F}
-library(tweetrmd)
+#library(tweetrmd)
 
-tweetrmd::tweet_embed("https://twitter.com/schumacherbj/status/1584278266546130944",
-                      widget_type = "video")
+#tweetrmd::tweet_embed("https://twitter.com/schumacherbj/status/1584278266546130944",
+                      #widget_type = "video")
 ```
 
 
@@ -286,15 +286,29 @@ where $β_{ik}$ is the value of the $kth$ parameter at location $i$. Using a  we
 $$\hat{β} = (x^twx)^{-1}x^twy$$
 In GWR, weighting an observation in accordance with its proximity to $i$ would allow an  estimation of $β_{ik}$ to  be made that  meets  the  criterion of “closeness of calibration points” set out above. Note that usually in weighted regression models the values of $w_i$ are constant, so that only one calibration has to be carried  out  to  obtain a set of coefficient estimates, but in  this  case w varies with i so that a  different  calibration exists for every point in the study area. In this case, the parameter estimation formula could be written more generally as
 $$\hat{β}_i = (x^tw_ix)^{-1}x^tw_iy$$
+
+
 ### Running Local Regression
 ```
 Talk about how local regression is run
 ```
 
+First of all, we need multiple locations to run a regression, not just a single location. GWR uses other observations in the dataset to run the regression. Observations that are close to location $i$ are given greater weights. The weight of an observation varies with location $i$. Normally, observations that are closer to location $i$ have a stronger influence on the estimation of the parameters for location $i$.
+
+An initial step toward weighting based on locality might be to exclude from the model calibration observations that are further than some distance d from the locality. This would be equivalent to setting their weights to zero, giving a weighting function of
+$$w_{ij} = 1 \;\;\; if \;\;\;\;d_{ij}\; < \;d;$$
+$$w_{ij} = 0 \;\;\; otherwise$$
+However, the spatial weighting function above suffers the problem of discontinuity. As $i$ varies around the study area, the regression coefficients could change drastically as one sample point moves into or out of the circular buffer around $i$ and which defines the data to be included in the calibration for location $i$.
+
 ### Bandwidth (Adaptive vs. Fixed)
+```
 Discuss the concept of bandwidth, and talk about adaptive vs. fixed bandwidth.
 1.	State that here, you will be using adaptive bandwidth
 a.	Explain why adaptive bandwidth is more appropriate in this problem than the fixed bandwidth
+```
+There are a couple of ways to weight nearby locations considering the problem of discontinuity. 
+![GWR with fixed spatial kernel. Source: Fotheringham et al. (2002, 45)](https://github.com/nlebovits/musa-500-hmwk-2/raw/main/fixed_bandwidth.png)
+
 
 ### Assumptions in GWR
 Mention that the OLS assumptions still hold in GWR.
@@ -340,7 +354,7 @@ library(spdep) #for spatial lag + error reg
 library(spgwr) # for geographically weighted reg
 library(spatialreg) #for spatial lag + error reg (alt)
 library(GWmodel) # for geographically weighted reg (alt)
-library(tweetrmd) # to embed a tweet
+#library(tweetrmd) # to embed a tweet
 library(sfdep) # for sf replacement of spdep
 library(lmtest) #for breusch pagan test
 library(whitestrap) # for white test
@@ -352,10 +366,10 @@ library(tseries) # for jarque bera test
 As in Homework #1, we are completing this assignment in R (rather than using GeoDa and ArcGIS). Once again, we will read in the original shapefile of data and transform the relevant columns to produce the initial data that we need for our analysis.
 
 ```{r import}
-reg_data = st_read('C:/Users/Nissim/Desktop/Fall 2022/Spat Stats/musa-500-hmwk-2/reg_data_files/Regression Data.shp')
+#reg_data = st_read('C:/Users/Nissim/Desktop/Fall 2022/Spat Stats/musa-500-hmwk-2/reg_data_files/Regression Data.shp')
 
 #Min
-#reg_data = read_sf('C:/Users/vestalk/Desktop/00_Upenn/20.Fall/03.MUSA 5000 Spatial Statistics and Data Analysis/Assignment/HW1/RegressionData.shp')
+reg_data = read_sf('C:/Users/vestalk/Desktop/00_Upenn/20.Fall/03.MUSA 5000 Spatial Statistics and Data Analysis/Assignment/HW1/RegressionData.shp')
 
 #define a function to find zero values in columns
 
