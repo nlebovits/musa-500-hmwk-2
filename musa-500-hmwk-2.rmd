@@ -286,7 +286,6 @@ where $β_{ik}$ is the value of the $kth$ parameter at location $i$. Using a  we
 $$\hat{β} = (x^twx)^{-1}x^twy$$
 In GWR, weighting an observation in accordance with its proximity to $i$ would allow an  estimation of $β_{ik}$ to  be made that  meets  the  criterion of “closeness of calibration points” set out above. Note that usually in weighted regression models the values of $w_i$ are constant, so that only one calibration has to be carried  out  to  obtain a set of coefficient estimates, but in  this  case w varies with i so that a  different  calibration exists for every point in the study area. In this case, the parameter estimation formula could be written more generally as
 $$\hat{β}_i = (x^tw_ix)^{-1}x^tw_iy$$
-
 ### Running Local Regression
 ```
 Talk about how local regression is run
