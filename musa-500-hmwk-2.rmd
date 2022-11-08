@@ -306,8 +306,11 @@ Discuss the concept of bandwidth, and talk about adaptive vs. fixed bandwidth.
 1.	State that here, you will be using adaptive bandwidth
 a.	Explain why adaptive bandwidth is more appropriate in this problem than the fixed bandwidth
 ```
-There are a couple of ways to weight nearby locations considering the problem of discontinuity. 
-![GWR with fixed spatial kernel. Source: Fotheringham et al. (2002, 45)](https://github.com/nlebovits/musa-500-hmwk-2/raw/main/fixed_bandwidth.png)
+There are a couple of ways to weight nearby locations considering the problem of discontinuity. Graphically, GWR involves fitting a spatial kernel to the data as described in the Figure 1. For a given regression point X, the weight (W) of a data point is at a maximum at the location of the regression point. The weight decreases gradually as the distance between two points increases. A regression model is thus calibrated locally by moving the regression point across the area under study. For each location, the data are weighted differently so that the resulting estimates are unique to a particular location.
+![Figure 1. GWR with fixed spatial kernel. Source: Fotheringham et al. (2002)](https://github.com/nlebovits/musa-500-hmwk-2/raw/main/img/fixed_bandwidth.png)
+A key issue is to decide between two options of spatial kernels: a fixed kernel or an adaptive kernel. Intuitively, a fixed kernel involves using a fixed bandwidth to define a region around all regression points as displayed in Figure 2. The extent of the kernel is determined by the distance to a given regression point, with the kernel being identical at any point in space. An adaptive kernel involves using varying bandwidth to define a region around regression points as displayed in Fig. 2. The extent of the kernel is determined by the number of nearest neighbours from a given regression point. The kernels have larger bandwidths where the data are sparse.
+![Figure 2. GWR with adaptive spatial kernel. Source: Fotheringham et al. (2002)](https://github.com/nlebovits/musa-500-hmwk-2/raw/main/img/fixed_bandwidth.png)
+
 
 
 ### Assumptions in GWR
