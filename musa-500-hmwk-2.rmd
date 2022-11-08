@@ -606,7 +606,8 @@ tm_shape(reg_data)+
   tm_fill(col = 'stand_resids', 
           style = 'quantile', 
           title = 'Standardized OLS Residuals', 
-          palette ='viridis')+
+          palette ='viridis',
+          midpoint = 0)+
   tm_layout(frame = FALSE, 
             title = 'Standardised OLS Residuals')
 ```
@@ -679,7 +680,8 @@ tm_shape(reg_data)+
   tm_fill(col = 'spatial_lag_resids', 
           style = 'quantile', 
           title = 'Spatial Lag Residuals', 
-          palette ='Blues')+
+          palette ='Blues',
+          midpoint = 0)+
   tm_layout(frame = FALSE)
 ```
 
@@ -745,7 +747,8 @@ tm_shape(reg_data)+
   tm_fill(col = 'spatial_error_resids', 
           style = 'quantile', 
           title = 'Spatial Error Residuals', 
-          palette ='Blues')+
+          palette ='Blues',
+          midpoint = 0)+
   tm_layout(frame = FALSE)
 ```
 
@@ -909,7 +912,8 @@ tm_shape(reg_data)+
   tm_fill(col = 'gwr_adapt_resids',  
           style = 'quantile',
           palette = 'Blues', 
-          title = "Residuals")+
+          title = "Residuals",
+          midpoint = 0)+
   tm_layout(frame = FALSE, 
   main.title = 'Residuals',
   title = "Adaptive GWR")
@@ -994,28 +998,32 @@ gwr_local_r2 = tm_shape(reg_data)+
                           tm_fill(col = 'gwr_adapt_r2', 
                                   style = 'quantile', 
                                   title = 'GWR Local R^2', 
-                                  palette = 'Blues')+
+                                  palette = 'Blues',
+                                midpoint = 0)+
                           tm_layout(frame = FALSE)
 
 gwr_coef_ln_n_bel_pov_100 = tm_shape(reg_data)+
                         tm_fill(col = 'coef_ln_n_bel_pov_100_adapt_stand', 
                                 style = 'quantile', 
                                 title = 'GWR Coef., ln_n_bel_pov_100', 
-                                palette = 'Blues')+
+                                palette = 'Blues',
+                                midpoint = 0)+
                         tm_layout(frame = FALSE)
 
 gwr_coef_pctbachmor = tm_shape(reg_data)+
                         tm_fill(col = 'coef_pctbachmor_adapt_stand', 
                                 style = 'quantile', 
                                 title = 'GWR Coef., PCTBACHMOR', 
-                                palette = 'Blues')+
+                                palette = 'Blues',
+                                midpoint = 0)+
                         tm_layout(frame = FALSE)
 
 gwr_coef_pctsingles = tm_shape(reg_data)+
                         tm_fill(col = 'coef_pctsingles_adapt_stand', 
                                 style = 'quantile', 
                                 title = 'GWR Coef., PCTSINGLES', 
-                                palette = 'Blues')+
+                                palette = 'Blues',
+                                midpoint = 0)+
                         tm_layout(frame = FALSE)
 
 
@@ -1023,7 +1031,8 @@ gwr_coef_pctvacant = tm_shape(reg_data)+
                         tm_fill(col = 'coef_pctvacant_adapt_stand', 
                                 style = 'quantile', 
                                 title = 'GWR Coef., PCTVACANT', 
-                                palette = 'Blues')+
+                                palette = 'Blues',
+                                midpoint = 0)+
                         tm_layout(frame = FALSE)
 
 # mapview(reg_data, zcol = 'coef_pctvacant_adapt_stand')
