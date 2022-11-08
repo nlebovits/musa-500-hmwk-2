@@ -296,8 +296,7 @@ Talk about how local regression is run
 First of all, we need multiple locations to run a regression, not just a single location. GWR uses other observations in the dataset to run the regression. Observations that are close to location $i$ are given greater weights. The weight of an observation varies with location $i$. Normally, observations that are closer to location $i$ have a stronger influence on the estimation of the parameters for location $i$.
 
 An initial step toward weighting based on locality might be to exclude from the model calibration observations that are further than some distance d from the locality. This would be equivalent to setting their weights to zero, giving a weighting function of
-$$w_{ij} = 1 \;\;\; if \;\;\;\;d_{ij}\; < \;d;$$
-$$w_{ij} = 0 \;\;\; otherwise$$
+$$w_{ij} = 1 \;\;\;\;\;\;\; if \;\;d_{ij} < d\\w_{ij} = 0 \;\;\;\;\;\;\; otherwise$$
 However, the spatial weighting function above suffers the problem of discontinuity. As $i$ varies around the study area, the regression coefficients could change drastically as one sample point moves into or out of the circular buffer around $i$ and which defines the data to be included in the calibration for location $i$.
 
 ### Bandwidth (Adaptive vs. Fixed)
@@ -308,14 +307,32 @@ a.	Explain why adaptive bandwidth is more appropriate in this problem than the f
 ```
 There are a couple of ways to weight nearby locations considering the problem of discontinuity. Graphically, GWR involves fitting a spatial kernel to the data as described in the Figure 1. For a given regression point X, the weight (W) of a data point is at a maximum at the location of the regression point. The weight decreases gradually as the distance between two points increases. A regression model is thus calibrated locally by moving the regression point across the area under study. For each location, the data are weighted differently so that the resulting estimates are unique to a particular location.
 ![Figure 1. GWR with fixed spatial kernel. Source: Fotheringham et al. (2002)](https://github.com/nlebovits/musa-500-hmwk-2/raw/main/img/fixed_bandwidth.png)
-A key issue is to decide between two options of spatial kernels: a fixed kernel or an adaptive kernel. Intuitively, a fixed kernel involves using a fixed bandwidth to define a region around all regression points as displayed in Figure 2. The extent of the kernel is determined by the distance to a given regression point, with the kernel being identical at any point in space. An adaptive kernel involves using varying bandwidth to define a region around regression points as displayed in Fig. 2. The extent of the kernel is determined by the number of nearest neighbours from a given regression point. The kernels have larger bandwidths where the data are sparse.
-![Figure 2. GWR with adaptive spatial kernel. Source: Fotheringham et al. (2002)](https://github.com/nlebovits/musa-500-hmwk-2/raw/main/img/fixed_bandwidth.png)
+With fixed bandwidth $h$, $w_{ij}$ is as follows:
+$$w_{ij} = \begin{cases}
+e^{-0.5(\frac{distance_{ij}}{h})^2},\;\;\;\;\;if\;\;\;distance_{ij}\leq h\\
+\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;0,\;\;\;\;\;if\;\;\;otherwise
+\end{cases}$$
+$Distance_{ij}$ is the distance between the regression point $i$ and data point $j$, and number of observations will vary around each point $i$, but the bandwidth distance $h$ will remain constant.
 
-
+A key issue is to decide between two options of spatial kernels: a fixed kernel or an adaptive kernel. Intuitively, a fixed kernel involves using a fixed bandwidth to define a region around all regression points as displayed in Figure 2. The extent of the kernel is determined by the distance to a given regression point, with the kernel being identical at any point in space. An adaptive kernel involves using varying bandwidth to define a region around regression points as displayed in  Figure 2. The extent of the kernel is determined by the number of nearest neighbours from a given regression point. The kernels have larger bandwidths where the data are sparse.
+![Figure 2. GWR with adaptive spatial kernel. Source: Fotheringham et al. (2002)](https://github.com/nlebovits/musa-500-hmwk-2/raw/main/img/adaptive_bandwidth.png)
+With adaptive bandwidth $h$, $w_{ij}$ is as follows :
+$$w_{ij} = \begin{cases}
+\Bigl[1-(\frac{distance_{ij}}{h})^2\Bigr]^2,\;\;\;\;\;if\;\;j\;\;is\;one\;of\;i's\;N\;nearest\;neighbors\\
+\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;0,\;\;\;\;\;if\;\;otherwise
+\end{cases}$$
+$Distance_{ij}$ is the distance between the regression point $i$ and data point $j$, and number of observations will remain constant around each point $i$, but the bandwidth distance $h$ will vary.
 
 ### Assumptions in GWR
+```
 Mention that the OLS assumptions still hold in GWR.
 1.	When mentioning multicollinearity, talk about the Condition Number, and the issues of multicollinearity/clustering in GWR.
+```
+
+
+
+
+
 
 ### GWR and P-Values
 Indicate why p-values are not part of the GWR output.
