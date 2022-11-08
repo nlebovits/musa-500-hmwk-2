@@ -314,25 +314,20 @@ e^{-0.5(\frac{distance_{ij}}{h})^2},\;\;\;\;\;if\;\;\;distance_{ij}\leq h\\
 \end{cases}$$
 $Distance_{ij}$ is the distance between the regression point $i$ and data point $j$, and number of observations will vary around each point $i$, but the bandwidth distance $h$ will remain constant.
 
-A key issue is to decide between two options of spatial kernels: a fixed kernel or an adaptive kernel. Intuitively, a fixed kernel involves using a fixed bandwidth to define a region around all regression points as displayed in Figure 2. The extent of the kernel is determined by the distance to a given regression point, with the kernel being identical at any point in space. An adaptive kernel involves using varying bandwidth to define a region around regression points as displayed in  Figure 2. The extent of the kernel is determined by the number of nearest neighbours from a given regression point. The kernels have larger bandwidths where the data are sparse.
+A key issue is to decide between two options of spatial kernels: a fixed kernel or an adaptive kernel. Intuitively, a fixed kernel involves using a fixed bandwidth to define a region around all regression points as displayed in Figure 2. The extent of the kernel is determined by the distance to a given regression point, with the kernel being identical at any point in space. An adaptive kernel involves using varying bandwidth to define a region around regression points as displayed in  Figure 2. The extent of the kernel is determined by the number of nearest neighbors from a given regression point. The kernels have larger bandwidths where the data are sparse.
 ![Figure 2. GWR with adaptive spatial kernel. Source: Fotheringham et al. (2002)](https://github.com/nlebovits/musa-500-hmwk-2/raw/main/img/adaptive_bandwidth.png)
 With adaptive bandwidth $h$, $w_{ij}$ is as follows :
 $$w_{ij} = \begin{cases}
 \Bigl[1-(\frac{distance_{ij}}{h})^2\Bigr]^2,\;\;\;\;\;if\;\;j\;\;is\;one\;of\;i's\;N\;nearest\;neighbors\\
 \;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;0,\;\;\;\;\;if\;\;otherwise
 \end{cases}$$
-$Distance_{ij}$ is the distance between the regression point $i$ and data point $j$, and number of observations will remain constant around each point $i$, but the bandwidth distance $h$ will vary.
+$Distance_{ij}$ is the distance between the regression point $i$ and data point $j$, and number of observations will remain constant around each point $i$, but the bandwidth distance $h$ will vary. As for us, adaptive bandwidth is more appropriate because our data varies across space.
 
 ### Assumptions in GWR
 ```
 Mention that the OLS assumptions still hold in GWR.
 1.	When mentioning multicollinearity, talk about the Condition Number, and the issues of multicollinearity/clustering in GWR.
 ```
-
-
-
-
-
 
 ### GWR and P-Values
 Indicate why p-values are not part of the GWR output.
