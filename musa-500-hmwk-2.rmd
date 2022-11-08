@@ -428,15 +428,6 @@ summary(reg_data$nb)
 
 We can visualize the connections between neighbors based on the weight matrix that we've connected. Here's what they look like:
 ```{r global moran map}
-
-# install.packages("sfnetworks")
-# install.packages("igraph")
-# install.packages("tidygraph")
-# remotes::install_github("luukvdmeer/sfnetworks", "fix-onattach")
-# library(igraph)
-# library(tidygraph)
-# library(sfnet)
-
 reg_data_lines = nb2lines(reg_data$nb, 
                           coords = st_centroid(reg_data$geometry), 
                           as_sf = TRUE)
@@ -456,7 +447,7 @@ Now we can apply the weight matrix that to calculate the global Moran's I.
 
 # now use that weight matrix to calculate global moran's i for MEDHVAL
 
-global_moran(reg_data$LNMEDINC, reg_data$nb, reg_data$weights)$`I`
+global_moran(reg_data$ln_med_h_val, reg_data$nb, reg_data$weights)$`I`
 ```
 
 Having calculated a global Moran's I, we'll use a Monte Carlo approach to test whether our global Moran's I is statistically significant. If the null hypothesis is true, then the probability of drawing the observed data is the same as any other permutation of the zi’s amongst the polygons. Thus, if m just the number if simulated Moran’s-I values exceeding the observed one, and M is the total number of simulations, then the probability of getting the observed Moran’s-I
@@ -470,12 +461,12 @@ $p = m+1 / M+1$
 # reshuffling test w 999 permutations
 # present Moran's I value, histogram of Moran's I values with all permutations, and p-value
 
-moranMC = global_moran_perm(reg_data$LNMEDINC, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)
+moranMC = global_moran_perm(reg_data$ln_med_h_val, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)
 
 moranMC
 ```
 
-Here we visualize the randomly permuted values from the Monte Carlo test. We can see that the calculated global Moran's I is far higher than the distribution of the random values. In fact, it is the highest (observed rank = 1000). It's p-value is < 0.001 and we can therefore reject the null hypothesis.
+Here we visualize the randomly permuted values from the Monte Carlo test. 
 ```{r global moran hist}
 #draws a histogram of our randomly permuted values
 # and adds a red line for our actual moran's i
@@ -495,10 +486,10 @@ ggplot(moranMCres) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-Additional confirmation of the significance of our Moran's I value can be found by plotting the relationship between LNMEDINC of the block groups and their neighbors. If there were no relationship between block group observations and those of their neighbors, we would not see a clear pattern in the plot below. However, we observe that this is not the case.
+Additional confirmation of the significance of our Moran's I value can be found by plotting the relationship between ln_med_h_val of the block groups and their neighbors. If there were no relationship between block group observations and those of their neighbors, we would not see a clear pattern in the plot below. However, we observe that this is not the case.
 ```{r global moran plot}
-moran.plot(reg_data$LNMEDINC, nb2listw(reg_data$nb),
-           xlab = "ln(MEDHINC)", 
+moran.plot(reg_data$ln_med_h_val, nb2listw(reg_data$nb),
+           xlab = "ln_med_h_val", 
             ylab = "Spatial Lag")
 ```
 
@@ -512,7 +503,7 @@ For Local Moran’s I results, present the Significance Map and Cluster Map obta
 
 # local Moran's I analysis with queen weight matrix; print results
 
-lisa = local_moran(reg_data$LNMEDINC, reg_data$nb, reg_data$weights, nsim = 999)
+lisa = local_moran(reg_data$ln_med_h_val, reg_data$nb, reg_data$weights, nsim = 999)
 
 head(lisa)
 ```
@@ -546,7 +537,7 @@ reg_data = reg_data |>
                                 )
                   )
 
-pal = c("red", "pink", "lightgrey", "lightblue", "blue")
+pal = c("#B2182B", "#F4A582", "lightgrey", "#92C5DE", "#2166AC")
 
 tm_shape(reg_data) +
   tm_fill(col = "lisa_map", palette = pal, title = "LISA Clusters")+
@@ -568,7 +559,7 @@ a.	Do test results indicate a problem with normality?
 ```{r ols}
 # OLS Regression
 
-reg = lm(formula=LNMEDINC ~ LNMEDHVAL + PCTVACANT, data = reg_data)
+reg = lm(formula=ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCTVACANT, data = reg_data)
 
 summary(reg)
 ```
@@ -602,7 +593,7 @@ jarque.bera.test(reg$residuals)
 ii.	Present the scatterplot of OLS_RESIDU by WT_RESIDU and describe the results.
 1.	Are the results (based on the value and significance level of ρ – that’s referred to as Slope b in the results) indicative of significant spatial autocorrelation?
 
-Now, let’s generate standardized residuals, which are OLS Model residuals divided by an estimate of their standard deviation, and map them. Visually, it certainly seems that there’s spatial autocorrelation in the residuals, with some higher values clustered in the northeast and northwest of the city, and some lower values clustered in north Philadelphia and downtown.
+Now, let’s generate standardized residuals, which are OLS Model residuals divided by an estimate of their standard deviation, and map them.
 ```{r ols resids}
 reg_data = reg_data |>
               mutate(stand_resids = rstandard(reg),
@@ -614,13 +605,13 @@ tm_shape(reg_data)+
   tm_fill(col = 'stand_resids', 
           style = 'quantile', 
           title = 'Standardized OLS Residuals', 
-          palette ='Blues')+
+          palette ='viridis')+
   tm_layout(frame = FALSE, 
             title = 'Standardised OLS Residuals')
 ```
 However, a visual assessment is not sufficient, and we will test the presence of spatial autocorrelation in two ways: 1) by regressing residuals on their queen neighbors, and 2) by looking at the Moran’s I of the residuals.
 
-First, let’s regress the OLS standardized residuals on the spatial lag of the OLS residuals (i.e., OLS residuals at the queen neighbors). We can see that the beta coefficient of the lagged residuals (sometimes also referred to as rho or lambda) is significant and positive (0.598, p<0.0001), meaning that there’s a significant level of spatial autocorrelation in the residuals. This is consistent with Moran’s I of the residuals we see below.
+First, let’s regress the OLS standardized residuals on the spatial lag of the OLS residuals (i.e., OLS residuals at the queen neighbors). 
 ```{r reg resids on nn}
 resids_lm = lm(formula = stand_resids ~ spatial_lag, data = reg_data)
 
@@ -651,7 +642,7 @@ a.	Compare these results to OLS results.
 4.	Compare the Spatial Lag regression and OLS regression models based on the Akaike Information Criterion/Schwarz Criterion, the Log Likelihood, and the Likelihood Ratio Test. 
 
 ```{r spatial lag}
-spatial_lag_reg = lagsarlm(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))
+spatial_lag_reg = lagsarlm(formula = ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))
 
 sumslr = summary(spatial_lag_reg)
 ```
@@ -680,7 +671,7 @@ jarque.bera.test(spatial_lag_reg$residuals)
 ```{r spatial lag stnad resids map}
 reg_data = reg_data |>
               mutate(
-                spatial_lag_resids = lagsarlm(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))$residuals
+                spatial_lag_resids = lagsarlm(formula = ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))$residuals
               )
 
 tm_shape(reg_data)+
@@ -715,13 +706,11 @@ a.	Compare these results to OLS results.
 
 
 ```{r spatial error}
-spatial_error_reg = errorsarlm(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, 
+spatial_error_reg = errorsarlm(formula = ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCTVACANT, 
                                data = reg_data, 
                                nb2listw(reg_data$nb))
 
 summary(spatial_lag_reg)
-
-# NOTE: I AM GETTTING SLIGHTLY DIFFERENT VALUES THAN EUGENE HERE. COULD IT BE THE RESULT OF RANDOMNESS?
 ```
 As with our OLS before, we will calculate the likelihood ratio for our spatial lag model.
 ```{r error likelihood ratio}
@@ -748,7 +737,7 @@ jarque.bera.test(spatial_error_reg$residuals)
 ```{r spatial error stnad resids map}
 reg_data = reg_data |>
               mutate(
-                spatial_error_resids = errorsarlm(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))$residuals
+                spatial_error_resids = errorsarlm(formula = ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))$residuals
               )
 
 tm_shape(reg_data)+
@@ -787,13 +776,13 @@ i.	Present GWR results from the _supp table (call this Table 4)
 
 Here we create an adaptive bandwidth.
 ```{r adaptive bandwidth est}
-adapt_bandwidth_est = GWmodel::bw.gwr(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT, 
+adapt_bandwidth_est = GWmodel::bw.gwr(formula = ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCTVACANT, 
                                 data = reg_data |> sf::as_Spatial(),
                                 approach = 'AIC', 
                                 kernel = 'gaussian', 
                                 adaptive = TRUE)
 
-adapt_bandwidth_est = gwr.sel(formula=LNMEDINC~LNMEDHVAL+PCTVACANT, 
+adapt_bandwidth_est = gwr.sel(formula=ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCTVACANT, 
                               data = reg_data |> sf::as_Spatial(),
                               method = "aic",
                               adapt = TRUE)
@@ -801,7 +790,7 @@ adapt_bandwidth_est = gwr.sel(formula=LNMEDINC~LNMEDHVAL+PCTVACANT,
 
 Here we create a fixed bandwidth.
 ```{r fixed bandwidth est}
-fixed_bandwidth_est = gwr.sel(formula=LNMEDINC~LNMEDHVAL+PCTVACANT, 
+fixed_bandwidth_est = gwr.sel(formula=ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCTVACANT, 
                               data = reg_data |> sf::as_Spatial(),
                               method = "aic",
                               adapt = FALSE)
@@ -810,7 +799,7 @@ fixed_bandwidth_est
 ```
 Here we run a basic GWR with an adaptive bandwidth.
 ```{r adaptive bw gwr}
-gwrmodel_adaptive = gwr(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT,
+gwrmodel_adaptive = gwr(formula = ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCTVACANT,
                         data = reg_data |> sf::as_Spatial(),
                         adapt = adapt_bandwidth_est, #adaptive bandwidth determined by proportion of observations accounted for
                         gweight = gwr.Gauss,
@@ -823,7 +812,7 @@ gwrmodel_adaptive
 Here we run a basic GWR with a fixed bandwidth.
 ```{r fixed bw gwr}
 # Perform a basic GWR
-gwrmodel_fixed = gwr(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT,
+gwrmodel_fixed = gwr(formula = ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCTVACANT,
               data = reg_data |> sf::as_Spatial(),
               bandwidth = fixed_bandwidth_est, #adaptive bandwidth determined by proportion of observations accounted for
               gweight = gwr.Gauss,
@@ -832,7 +821,13 @@ gwrmodel_fixed = gwr(formula = LNMEDINC ~ LNMEDHVAL + PCTVACANT,
 
 gwrmodel_fixed
 ```
-We can look at a summary of the coefficients of the local regressions, stored in the SDF object within thegwrmodel. Note in particular the minimum and maximum values of the Local $R^2$ (0.05789 - 0.75169). There are no negative values, meaning that this output, unlike the output we get in some versions of ArcGIS Pro, is correct.
+
+```{r gwr dfs}
+gwr_adaptive_results = as.data.frame(gwrmodel_adaptive$SDF)
+
+gwr_fixed_results = as.data.frame(gwrmodel_fixed$SDF)
+```
+We can look at a summary of the coefficients of the local regressions, stored in the SDF object within the gwrmodel. Note in particular the minimum and maximum values of the Local $R^2$ (`r min(gwr_adaptive_results$localR2)` - `r max(gwr_adaptive_results$localR2)`). There are no negative values, meaning that this output, unlike the output we get in some versions of ArcGIS Pro, is correct.
 
 ### Local GWR Results
 
@@ -841,41 +836,57 @@ summary(gwrmodel_adaptive$SDF)
 ```
 We can also map the standardized coefficients. The higher the absolute value of the ratio between the coefficient and the standard error, the more plausible it is that the relationship between the predictor and the dependent variable is significant at the location.
 ```{r gwr dataframe and map}
-gwr_adaptive_results = as.data.frame(gwrmodel_adaptive$SDF)
-
-gwr_fixed_results = as.data.frame(gwrmodel_fixed$SDF)
-
 reg_data = reg_data |>
               mutate(
-                coef_lnmedhval_adapt_stand = gwr_adaptive_results$LNMEDHVAL / gwr_adaptive_results$LNMEDHVAL_se,
+                coef_ln_n_bel_pov_100_adapt_stand = gwr_adaptive_results$ln_n_bel_pov_100 / gwr_adaptive_results$ln_n_bel_pov_100_se,
+                coef_pctbachmor_adapt_stand = gwr_adaptive_results$PCTBACHMOR / gwr_adaptive_results$PCTBACHMOR_se,
+                coef_pctsingles_adapt_stand = gwr_adaptive_results$PCTSINGLES / gwr_adaptive_results$PCTSINGLES_se,
                 coef_pctvacant_adapt_stand = gwr_adaptive_results$PCTVACANT / gwr_adaptive_results$PCTVACANT_se,
                 gwr_adapt_resids = gwr_adaptive_results$gwr.e,
                 gwr_adapt_r2 = gwr_adaptive_results$localR2,
-                coef_lnmedhval_fixed_stand = gwr_fixed_results$LNMEDHVAL / gwr_fixed_results$LNMEDHVAL_se,
-                coef_pctvacant_fixed_stand = gwr_fixed_results$PCTVACANT / gwr_fixed_results$PCTVACANT_se,
-                gwr_fixed_resids = gwr_fixed_results$gwr.e,
-                gwr_fixed_r2 = gwr_fixed_results$localR2,
               )
 
-coef_lnmedhval_adapt_stand_map = tm_shape(reg_data)+
-                                    tm_fill(col='coef_lnmedhval_adapt_stand', 
+
+coef_ln_n_bel_pov_100_adapt_stand_map = tm_shape(reg_data)+
+                                    tm_fill(col='coef_ln_n_bel_pov_100_adapt_stand', 
                                             breaks=c(-Inf, -6, -4, -2, 0, 2, 4, 6, Inf), 
-                                            title='Standardized coefficient of LNMEDHVAL', 
+                                            title='Stand. coef. of ln_n_bel_pov_100', 
                                             palette ='-RdBu')+
                                     tm_layout(frame=FALSE, 
-                                              main.title = 'Median House Value (Log)',
-                                              title = "Adaptive GWR")
+                                              main.title = '# Bel. Pov Line (Log)')
+
+coef_pctbachmor_adapt_stand_map = tm_shape(reg_data)+
+                                    tm_fill(col='coef_pctbachmor_adapt_stand', 
+                                            breaks=c(-Inf, -6, -4, -2, 0, 2, 4, 6, Inf), 
+                                            title='Stand. coef. of PCTBACHMOR', 
+                                            palette='-RdBu')+
+                                    tm_layout(frame=FALSE, 
+                                              main.title = '% w/Bach/ Deg.+')
+
+coef_pctsingles_adapt_stand_map = tm_shape(reg_data)+
+                                    tm_fill(col='coef_pctsingles_adapt_stand', 
+                                            breaks=c(-Inf, -6, -4, -2, 0, 2, 4, 6, Inf), 
+                                            title='Stand. coef. of PCTSINGLES', 
+                                            palette='-RdBu')+
+                                    tm_layout(frame=FALSE, 
+                                              main.title = '% Single Housing Units')
 
 coef_pctvacant_adapt_stand_map = tm_shape(reg_data)+
                                     tm_fill(col='coef_pctvacant_adapt_stand', 
                                             breaks=c(-Inf, -6, -4, -2, 0, 2, 4, 6, Inf), 
-                                            title='Standardized coefficient of PCTVACANT', 
+                                            title='Stand. coef. of PCTVACANT', 
                                             palette='-RdBu')+
                                     tm_layout(frame=FALSE, 
-                                              main.title = 'Percentage of Housing Vacant',
-                                              title = "Adaptive GWR")
+                                              main.title = 'Percentage of Housing Vacant')
 
-tmap_arrange(coef_lnmedhval_adapt_stand_map, coef_pctvacant_adapt_stand_map, ncol=2)
+
+tmap_arrange(coef_ln_n_bel_pov_100_adapt_stand_map, 
+             coef_pctbachmor_adapt_stand_map,
+             ncol = 2)
+
+tmap_arrange(coef_pctsingles_adapt_stand_map,
+             coef_pctvacant_adapt_stand_map, 
+             ncol=2)
 ```
 
 ### Local GWR R-Squared Results
@@ -985,10 +996,24 @@ gwr_local_r2 = tm_shape(reg_data)+
                                   palette = 'Blues')+
                           tm_layout(frame = FALSE)
 
-gwr_coef_lnmedinc = tm_shape(reg_data)+
-                        tm_fill(col = 'coef_lnmedhval_adapt_stand', 
+gwr_coef_ln_n_bel_pov_100 = tm_shape(reg_data)+
+                        tm_fill(col = 'coef_ln_n_bel_pov_100_adapt_stand', 
                                 style = 'quantile', 
-                                title = 'GWR Coef., LNMEDINC', 
+                                title = 'GWR Coef., ln_n_bel_pov_100', 
+                                palette = 'Blues')+
+                        tm_layout(frame = FALSE)
+
+gwr_coef_pctbachmor = tm_shape(reg_data)+
+                        tm_fill(col = 'coef_pctbachmor_adapt_stand', 
+                                style = 'quantile', 
+                                title = 'GWR Coef., PCTBACHMOR', 
+                                palette = 'Blues')+
+                        tm_layout(frame = FALSE)
+
+gwr_coef_pctsingles = tm_shape(reg_data)+
+                        tm_fill(col = 'coef_pctsingles_adapt_stand', 
+                                style = 'quantile', 
+                                title = 'GWR Coef., PCTSINGLES', 
                                 palette = 'Blues')+
                         tm_layout(frame = FALSE)
 
@@ -996,16 +1021,19 @@ gwr_coef_lnmedinc = tm_shape(reg_data)+
 gwr_coef_pctvacant = tm_shape(reg_data)+
                         tm_fill(col = 'coef_pctvacant_adapt_stand', 
                                 style = 'quantile', 
-                                title = 'GWR Coef., LNMEDINC', 
+                                title = 'GWR Coef., PCTVACANT', 
                                 palette = 'Blues')+
                         tm_layout(frame = FALSE)
 
 # mapview(reg_data, zcol = 'coef_pctvacant_adapt_stand')
 
-tmap_arrange(gwr_local_r2,
-             gwr_coef_lnmedinc,
+gwr_local_r2
+
+tmap_arrange(gwr_coef_ln_n_bel_pov_100,
+             gwr_coef_pctbachmor,
+             gwr_coef_pctsingles,
              gwr_coef_pctvacant,
-             ncol = 3)
+             ncol = 2)
 ```
 
 
