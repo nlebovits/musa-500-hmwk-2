@@ -328,10 +328,13 @@ $Distance_{ij}$ is the distance between the regression point $i$ and data point 
 Mention that the OLS assumptions still hold in GWR.
 1.	When mentioning multicollinearity, talk about the Condition Number, and the issues of multicollinearity/clustering in GWR.
 ```
+Many of Assumptions of OLS, normality of residuals, homoscedasticity, no multicollinearity and noramly distributed residuals are still needed to be holded in GWR. GWR builds a local regression equation for each feature in the dataset. When the value for an explanatory variable cluster spatially in a substantial way, you will very likely have a problem. That is, the variable tells the same story at every location. Also, you may have a problem with multicollinearity when you have two or more variables that have similar patterns of clusters in a certain region. we may run into problems if we use two variables which both have very high (or very low) values at all locations in a certain part of the study region. The condition number in the attribute table indicates when results are unstable due to local multicollinearity. To check this issue, we can look through the Cond.Number field from GWR results attribute table, As a rule of thumb, it is likely to be multicollinearity issues where features with a condition number larger than 30; equal to Null; or equal to -1.7976931348623158e + 308. 
 
 ### GWR and P-Values
+```
 Indicate why p-values are not part of the GWR output.
-
+```
+In a global model it is usual to test whether the parameter estimates are significantly different from zero. This can be accomplished  with a t-test. The  situation with GWR is  a  little more  complex and is  the  subject of  current research. As there is one set of parameters associated with each regression point, as well as one set of standard errors, then there are potentially thousands of tests that would be required to determine whether parameters are locally significant. The assumption behind the tests mean that if the 0.05 significance level is used we would expect 5 tests in every hundred to be significant. With a 5 variable model estimated at 20000 regression points, we would expect 5000 of these tests to return a significant result. This is the problem raised by multiple testing. 
 
 ##-----------------------------min doing end--------------------------------------------------------------------------------------------##
 
