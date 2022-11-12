@@ -106,7 +106,7 @@ In your own words, talk about how you test whether the spatial autocorrelation (
 Briefly describe the concept of local spatial autocorrelation, without going into any of the mathematical detail.
 
 
-##-----------------------------min done start 221029-------------------------------------------------------------------------------------------##
+##-----------------------------min------------------------------------------------------------------------------------------##
 
 ## OLS Regression and Assumptions
 
@@ -166,10 +166,6 @@ When residuals are not normal, we may run into some problems for OLS (and spatia
 -2.	Looking at the Jarque-Bera test in Geoda
 The Jarque-Bera test in GeoDa examines the Null Hypothesis that the residuals are from a normal distribution. If p-value < 0.05, we can reject the Null Hypothesis of normality for the alternative hypothesis of non-normality.
 
-##-----------------------------min done end 221029-------------------------------------------------------------------------------------------##
-
-
-##-----------------------------min done start 221105----------------------------------------------------------------------------------------##
 
 ## Spatial Lag and Spatial Error Regression
 
@@ -230,7 +226,6 @@ State the goal of spatial lag and spatial error regression (i.e., what you hope 
 
 Goal of Spatial Regression is to take consideration the possibility of spatial dependency in the residuals. By using this method, we want to our model to be no longer spatially autocorrelated and less heteroscedasticity.
 
-
 ### Regression Performance Compared
 ```
 vi.	Mention that you will compare the results of spatial lag regression with OLS and the results of spatial error regression with OLS, and will decide whether the spatial models perform better than OLS based a number of criteria. 
@@ -252,12 +247,6 @@ Also, Likelihood ratio test could be another tool for comparison OLS model with 
 
 We can use Moran's I to figure out which model is better between OLS and spatial lag and spatial error. Firstly, run OLS regression and examine residuals for spatial autocorrelation (Moran’s I). If there is no significant spatial autocorrelation in the residuals, stop. If there is significant spatial autocorrelation in residuals, we need to look at the the Lagrange Multiplier (lag) and the Lagrange Multiplier (error), which tells you whether you should run a spatial regression or spatial error model. First, look at If neither of LM is significant, then OLS is good enough. If Lagrange Multiplier (lag) is significant and Lagrange Multiplier (error) is not, then run the spatial lag model. If Lagrange Multiplier (error) is significant and Lagrange Multiplier (lag) is not, then run the spatial error model
 If both are significant (as here), look at Robust LM (lag) and Robust LM (error). Choose the one that is more significant, which has a lower p-value or higher test statistic value and run that model.
-
-
-##-----------------------------min done end 221105----------------------------------------------------------------------------------------##
-
-##-----------------------------min doing start--------------------------------------------------------------------------------------------##
-
 
 ## Geographically Weighted Regression
 
@@ -336,8 +325,7 @@ Indicate why p-values are not part of the GWR output.
 ```
 In a global model it is usual to test whether the parameter estimates are significantly different from zero. This can be accomplished  with a t-test. The  situation with GWR is  a  little more  complex and is  the  subject of  current research. As there is one set of parameters associated with each regression point, as well as one set of standard errors, then there are potentially thousands of tests that would be required to determine whether parameters are locally significant. The assumption behind the tests mean that if the 0.05 significance level is used we would expect 5 tests in every hundred to be significant. With a 5 variable model estimated at 20000 regression points, we would expect 5000 of these tests to return a significant result. This is the problem raised by multiple testing. 
 
-##-----------------------------min doing end--------------------------------------------------------------------------------------------##
-
+##-----------------------------min------------------------------------------------------------------------------------------##
 
 ## Tools
 - List packages for spatial lag & spatial error
@@ -650,6 +638,7 @@ resids_lm = lm(formula = stand_resids ~ spatial_lag, data = reg_data)
 
 summary(resids_lm)
 ```
+
 ### Moran's I Significance
 
 Once again, we can use the Monte Carlo simulation to generate a Moran's I statistics and a pseudo p-value.
@@ -729,6 +718,7 @@ global_moran_perm(spatial_lag_reg$residuals, reg_data$nb, reg_data$weights, alte
 # once again, run moran's I for the spatial lag residuals; test w 999 permutations
 # print scatterplot & summary table of significance test
 ```
+
 
 ### Spatial Error Regression Results
 Present results of Spatial Error regression (call this Table 3)
