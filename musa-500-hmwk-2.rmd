@@ -1565,10 +1565,11 @@ tmap_arrange(gwr_coef_ln_n_bel_pov_100,
 
 # Discussion
 
-a)  In a couple sentences, recap what you did in the paper and your
-    findings. Discuss what conclusions you can draw, and which of the
-    four regression methods (OLS, Spatial Lag, Spatial Error, GWR) was
-    the best, based on the results.
+In this project, we used three approaches in creating model other than OLS, including spatial lag, spatial error, and geographically weighted regression (GWR), to check whether they can better account for spatial auto-correlation than OLS.
+
+Based on the results indicated in the 'model comparison' section above, GWR is the best out of the four regression methods, not only because it has a high $R^2$ value than OLS but also because it has an Moran's I that is closer to 0 out of the four and lower AIC than spatial error or spatial lag. Such results suggest that GWR is overall a better model with better ability to account for spatial auto-correlation. 
+
+
 b)  Give a brief description of the limitations (i.e., which assumptions
     were not met).
 
