@@ -110,260 +110,234 @@ weighted regression.
 
 ## Prior Analysis
 
-In HW 1, we utilized OLS (ordinary least sqaures) regression to build a
-model looking at the relationship between a dependent variable
-(log-transformed median house values) and four predictors (percentage pf
-vacant house, percentage of single family house, percentage of residents
-holding a Bachelor or higher degree, and log-transformed poverty rate).
+In Homework #1, we utilized OLS (ordinary least sqaures) regression to
+build a model looking at the relationship between a dependent variable
+(log-transformed median house values) and four predictors (percentage of
+vacant houses, percentage of single family houses, percentage of
+residents holding a Bachelor's degree or higher, and log-transformed
+poverty rate).
 
 ## Issues with OLS
 
 Although the result of our OLS regression model was relatively
 acceptable for social science research, it inevitably suffered from OLS
-regression's incapability dealing with the spatial component of our
-dataset . Given the geographic nature of house price data, taking sptial
-elements into consideration may largely improve our model.
+regression's inability to address the spatial component of our dataset.
+Given the geographic nature of house price data, taking saptial elements
+into consideration may substantially improve our model.
 
 ## Improving on OLS
 
-Hence, this project aims to incorporate spatial components of our
-dataset via methods of spatial lag, spatial error, and geographically
-weighted regression (GWR). In the results and discussion sections, we
-will revisit the OLS approach from last project and make comparisons
-between different approaches, and suggest whether spatial lag and/or
-spatial error and/or GWR performs better than OLS.
+This project aims to incorporate the spatial components of our data by
+considering spatial lag, spatial error, and geographically weighted
+regression (GWR). In the results and discussion sections, we will
+revisit the OLS approach from last project and make comparisons between
+different approaches, and suggest whether spatial lag, spatial error,
+and/or GWR perform better than OLS.
 
 # Methods
 
 ## Spatial Autocorrelation
 
-Spatial autocorrelation looks at how one observation of a variable at
-one location vary from another observation at a nearby location, in
-other words, the relationship of values of a single variable at
-neighboring locations. A positive spatial autocorrelation suggests more
-similar values at locations that are closer by, while negative spatial
-autocorrelation suggests observations at closer locations show values
-that are more different.
-
-Spatial Autocorrelation is guided by and based on the premise of
-Tobler's 1st Law of Geography.
+Spatial autocorrelation looks at how the value of a variable for an
+observation varies in comparison to values for other observations
+nearby. In other words, it is the relationship of values of a single
+variable at neighboring locations. Positive spatial autocorrelation
+suggests more similar values at proximate locations, while negative
+spatial autocorrelation suggests greater differences in the value of the
+variable for more proximate observations.
 
 ### Tobler's 1st Law
 
-As one of the most influential work, Waldo Tobler proposed the First Law
-of Geography in 1970. The law states that, "everything is related to
-everything else, but near things are more related than distant things."
-Because of this potential association between values of a variable and
-their locations, spatial statistics and autocorrelation should be taken
-into consideration into models.
+Spatial autocorrelation is based on Waldo Tobler's First Law of
+Geography. Proposed in 1970, Tobler's First Law states that, "everything
+is related to everything else, but near things are more related than
+distant things." Because of this potential association between values of
+a variable and their locations, spatial statistics and autocorrelation
+should be taken into consideration in models.
 
 ### Moran's I
 
-One of the most commonly used test for spatial autocorrelation (also
-known as spatial dependencies) is Moran's I. Larger positive values
-indicate a stronger positive spatial autocorrelation (geospatial
-clustering of similar values), while larger negative values indicate a
-strong negative correlation (spatial dispersion of similar values).
-Value closer to 0 indicates little to no spatial autocorrelation,
-namely, random distribution / pattern.
+One of the most commonly used tests for spatial autocorrelation (also
+known as spatial dependencies) is Moran's I. Larger positive values of
+Moran's I indicate a stronger positive spatial autocorrelation
+(geospatial clustering of similar values), while larger negative values
+indicate a strong negative correlation (spatial dispersion of similar
+values). Value closer to 0 indicate little to no spatial
+autocorrelation, i.e., random distribution.
 
 **Present and explain formula for Moran's I**
 
 ### Weight Matrices
 
-Weight Matrices is a $n * n$ table (given n observations in the dataset)
-that is useful for calculating spatial auto-correlation indices (which
-means, quantifying the extent of spatial auto-correlation). There are
-different types of weight matrices with their characteristics, with Rook
-and Queen being two most frequently used contiguity-based spatial
-weights. In many occasions, statisticians would try several different
-weight matrices to ensure that the results is universal regardless of
-their selection of matrices, unless they have theoretical reasoning that
-strongly suggest the application of a particular type of weight
-matrices.
+Weight matrices are a $n * n$ table (given $n$ observations in the
+dataset) that is useful for calculating spatial autocorrelation indices
+(which means, quantifying the extent of spatial autocorrelation). There
+are different types of weight matrices, with "rook" and "queen" being
+the two most frequently used contiguity-based spatial weights. Often,
+statisticians try several different weight matrices to ensure that their
+results are universal, unless they have theoretical reasoning that
+strongly suggest the application of a particular weight matrix.
 
-In this project, we are using the Queen Weight Matrix, which account for
+In this project, we are using a queen weight matrix, which accounts for
 neighbors that are directly next to and diagonally linked to the area of
-interest. In comparison to Rook weights, which does not account for
-diagonal areas (only four directions reflected, up, down, left, and
-right), Queen weights does a better job in reflecting neighboring values
-in all eight directions.
+interest. In comparison to a rook weight matrix, which does not account
+for diagonal areas (only four directions reflected, up, down, left, and
+right), queen weights do a better job reflecting neighboring values in
+all eight directions.
 
 ### Significance Testing
 
-In your own words, talk about how you test whether the spatial
-autocorrelation (Moran's I) is significant. State what hypotheses you're
-testing (present the null and alternative hypotheses) and describe the
-random permutation process.
+To test the significance of our our spatial autocorrelation tests
+(Moran's I), we are using a Monte Carlo approach. This process requires
+us to shuffle the value of the dependent variable 999 times, recalculate
+the Moran's I value for each permutation, then rank and compare the
+original Moran's I value with all 999 permutations. We calculate a
+pseudo p-value by taking the rank of the original Moran's I compared to
+the permutations and dividing it by 1,000. The pseudo p-value helps us
+test the significance of our Moran's I and test our hypotheses, which
+are:
 
-We use 999 random permutation process to test the significance of
-spatial autocorrelation (Moran's I). This process requires shuffling the
-value of dependent variable for 999 times and calculating Moran's I
-values for each permutation, then ranking and comparing the original
-Moran's I value with the ones for permutations. A Pseudo P-value is
-calculated by taking the rank of the original Moran's I value and
-dividing it by 1000. The Pseudo P-value helps us test the significance
-of Moran's I and test our hypotheses for this project:
+$H_0$ = there is no spatial autocorrelation (i.e., the pattern is
+random)
 
-Null Hypothesis $H_0$ = there is no spatial autocorrelation (i.e., the
-pattern is random).
-
-Alternative Hypothesis $H_1$ = there is spatial autocorrelation, whether
-positive or negative.
+$H_a$ = there is spatial autocorrelation, whether positive or negative
 
 ### Local vs. Global Spatial Autocorrelation
 
-Developed by Luc Anselin, Local Indices of Spatial Autocorrelation, as
-known as LISA, is used for calculating local spatial autocorrleation.
-Testing local spatial auto-correlation, unlike testing global spatial
-auto-correlation that generates one Moran's I value, generates an I
-value for each individual location. While global Moran's I, which tests
-for global spatial autocorrelation, is very helpful for us to understand
-the entire dataset, local Moran's I helps us dig into specific locations
-and see how they assimilate or differ from their neighboring areas. Our
-projects include calculation of local Moran's I for further analysis on
-spatial autocorrelation.
+Developed by Luc Anselin, Local Indices of Spatial Autocorrelation
+(LISA) are used for calculating local spatial autocorrleation. Unlike
+the global Moran's I, which generates one value, LISAs generates a local
+Moran's I value for each location. While the global Moran's I helps us
+understand the entire dataset, the local Moran's I values help us dig
+into specific locations and see how they compare to their neighbors. Our
+project calculates local Moran's I values in order to carry out further
+analysis of spatial autocorrelation.
 
 ## OLS Regression and Assumptions
 
 ### Overview of OLS Regression
 
 OLS (Ordinary least squares) is a method to explore relationships
-between a dependent variable and one or more explanatory variables - the
-strength and direction of their relationship(s) and the goodness of
-model fit. (For more information, please refer to [our previous homework
-assignment](https://rpubs.com/nlebovits/musa-550-assign-1-ed-2). OLS
-Regression are usually run with five assumptions, and it is crucial to
-ensure those assumptions are not violated for a OLS regression to be
-legit.
+between a dependent variable and one or more explanatory variables. It
+considers the strength and direction of these relationships and the
+goodness of model fit. (For more information, please refer to [our
+previous homework
+assignment](https://rpubs.com/nlebovits/musa-550-assign-1-ed-2).) When
+running an OLS regression, it is crucial to ensure that the following
+five assumptions are not violated:
 
-The OLS regression assumptions include:
+1.  A linear relationship between the dependent variable and predictors
+2.  Normality of residuals
+3.  Homoscedasticity
+4.  Independence of observations (no spatial, temporal or other forms of
+    dependence in the data)
+5.  No multicollinearity
 
-1.  the linear relationship between the dependent variable and
-    predictors
-2.  the normality of residuals
-3.  homoscedasticity
-4.  the independence of observations(no spatial, temporal or other forms
-    of dependence in data)
-5.  the absence of multicollinearity
-
-According to the HW 1, three of above five OLS assumptions were
+In Homework #1, we showed that three of above five OLS assumptions were
 violated. First, the relationships between our dependent variable and
 the predictor variables were generally not linear. Additionally, the
-scatterplot of predicted values compared to standardized residuals shows
-heteroscedasticity. Finally, our map of the standardized residuals shows
-signs of spatial autocorrelation, indicating systematic patterns in our
-data, which is violated fourth assumption. All three of these issues
-undermine key assumptions of linear regression.
+scatterplot of predicted values compared to standardized residuals
+showed heteroscedasticity. Finally, our map of the standardized
+residuals showed signs of spatial autocorrelation, indicating systematic
+patterns in our data, violating the fourth assumption. These three
+issues undermine key assumptions of linear regression.
 
 ### Random Errors in Spatial Data
-
-    ii. State that when the data has a spatial component, the assumption that your errors are random/independent often doesn’t hold
-    1.  Indicate that you can test the assumption in (ii) above by examining the spatial autocorrelation of the residuals using Moran’s I.
 
 When residuals contain a systematic pattern, the assumption of
 randomness of residuals is not met. Specifically, if we have spatially
 autocorrelated OLS residuals, there is systematic under-prediction or
 over-prediction in certain parts of the study region; furthermore, the
-significance estimates for the β coefficients in OLS may be incorrect
-(inflated). There are a couple ways to check for spatial autocorrelation
-of the OLS residuals, though the first thing to do might be to map the
-residuals. We want the map of the residuals to look random, and it
-implies that our model is not spatially autocorrelated. After looking at
-the residual maps, we would want to Compute the Moran's I of the
-residuals. Ideally, we will see a Moran's I close to 0, there is an
-obvious problem with spatial autocorrelation of residuals.
+significance estimates for the $\beta$ coefficients in OLS may be
+incorrect (inflated). There are a couple ways to check for spatial
+autocorrelation of the OLS residuals, though the first thing to do might
+be to map the residuals. We want the map of the residuals to look
+random; this would imply that our model is not spatially autocorrelated.
+After looking at the residual maps, we would want to compute the global
+Moran's I of the residuals. Ideally, we will see a Moran's I close to 0,
+there is an obvious problem with spatial autocorrelation of residuals.
 
-    2.  Indicate that another way to test OLS residuals for spatial autocorrelation is to regress them on nearby residuals (here, these nearby residuals are residuals at neighboring block groups, as defined by the Queen matrix). a. Mention rho (ρ) and how it is calculated. [It’s that term that’s known as lambda (λ) in GeoDa, and is referred to as Slope b in the statistics at the bottom of the scatterplot of OLS_RESIDU and WT_RESIDU]
-
-Regress residuals $\hat{ε}$ on spatially lagged residuals $W\hat{ε}$.
+Below in [section 3.2.2](#scatterplot-of-residuals), we will regress
+residuals $\hat{ε}$ on the spatially lagged residuals $W\hat{ε}$.
 Ideally, we would see that there is no relationship between $\hat{ε}$
 and $W\hat{ε}$ -- that is, that the coefficient of $W\hat{ε}$, which we
-denote by $λ$ in GeoDa (as opposed to $β_1$) is not significantly
-different from 0. $λ$ can range between -1 and 1. we are able to regress
-residuals on the nearest neighbor residuals, thereby filtering the
-spatial information out of the OLS residuals and decomposing the
-residuals $ε$ into two parts: one with a spatial pattern $λWε$ and one
-which is simply random noise $u$.
-$$ y = β_0 + β_1X_1 +...+ β_nX_n +λWε+ u$$
+denote as $\beta_1$, is not significantly different from 0. $\beta_1$
+can range between -1 and 1. We are able to regress residuals on the
+nearest neighbor residuals, thereby filtering the spatial information
+out of the OLS residuals and decomposing the residuals $ε$ into two
+parts: one with a spatial pattern $λWε$ and one which is simply random
+noise $u$. $$ y = β_0 + β_1X_1 +...+ β_nX_n +λWε+ u$$
 
 ### Testing Other Regression Assumptions in R
 
-    iii.    State that GeoDa, the tool that you’re using to run your OLS regression, also has a way of testing other regression assumptions. 
-    1.  The first is the assumption of homoscedasticity, which is tied to the assumption of independence of errors.
-    a.  State which test(s) is/are used to examine data for heteroscedasticity in GeoDa, and state the null and alternative hypotheses.
+Below, in [section 3.2](#ols-output) and [section
+3.3](#spatial-lag-regression-results), we will test the null hypothesis
+of homoscedasticity against the alternative hypothesis of
+heteroscedasticity using the following tests:
 
-We can use the following tests in GeoDa to test the null hypothesis of
-homoscedasticity, against the alternative hypothesis of
-heteroscedasticity. -1. Koenker-Bassett Test : Robust Tests for
-Heteroscedasticity Based on Regression Quantiles -2. Breusch-Pagan Test
-: Simple test for heteroscedasticity and random coefficient variation
--3. White Test : A Heteroskedasticity-Consistent Covariance Matrix
-Estimator and a Direct Test for Heteroskedasticity. The null hypothesis
-here is that of homoscedasticity. If the p-value is less than 0.05, then
-we can reject the null hypothesis for the alternate hypothesis of
-heteroscedasticity.
+1)  Koenker-Bassett Test : Robust Tests for Heteroscedasticity Based on
+    Regression Quantiles
+2)  Breusch-Pagan Test : Simple test for heteroscedasticity and random
+    coefficient variation
+3)  White Test : A Heteroskedasticity-Consistent Covariance Matrix
+    Estimator and a Direct Test for Heteroskedasticity.
 
-    2.  Another assumption is that of normality of errors.
-    a.  State which test is used to test for normality of errors in GeoDa, and state the null and alternative hypotheses.
+For these tests, $H_0$ is the assumption of homoscedasticity, while
+$H_a$ is the presence of heteroscedasticity. If the p-value \< 0.05, we
+can reject $H_0$.
 
-When residuals are not normal, we may run into some problems for OLS
-(and spatial) regression. We can check for normality by -1. Examining
-the histogram of residuals -2. Looking at the Jarque-Bera test in Geoda
-The Jarque-Bera test in GeoDa examines the Null Hypothesis that the
-residuals are from a normal distribution. If p-value \< 0.05, we can
-reject the Null Hypothesis of normality for the alternative hypothesis
-of non-normality.
+Another important assumption is the normality of residuals. When
+residuals are not normal, we may run into issues with both OLS
+regression and spatial regression. We can check the normality of
+residuals by:
+
+1)  Examining the histogram of residuals, and
+2)  Running the Jarque-Bera test.
+
+Here, $H_0$ is the normality of residuals, while $H_a$ is the non-normal
+distribution of residuals, If the p-value \< 0.05, we can reject $H_0$.
 
 ## Spatial Lag and Spatial Error Regression
 
 ### Spatial Lag Regression
 
-In simpler terms, we can understand spatial lag through the analogy of
-this Stats Wizard Penguin (SWP) and his Inept Companions (ICs): although
-the SWP may have a stats wizardry quotient (SWQ) of over 9,000, its
-spatial lag (i.e., the average value of the SWQs of its neighboring ICs)
-is 0 because all the neighboring penguins know exactly 0 about
-statistics. (Crucially, we should use a symmetrical matrix of
-statistically incompetent penguins, as this is a key requirement of
-spatial lag and spatial error regressions).
-
-```{r tweet embed, echo = F}
-#library(tweetrmd)
-
-#tweetrmd::tweet_embed("https://twitter.com/schumacherbj/status/1584278266546130944",
-                      #widget_type = "video")
-```
-
-    ii. Describe the method of spatial lag regression in several sentences. 
-    1.  Present the model equation for the spatial lag model. 
-    a.  Instead of writing X1…X4, write the names of the actual predictors that you’re using in this assignment (e.g., PCTVACANT)
-    b.  Explain what each term is (the β coefficients, ρ, ε, etc)
-
-Spatial Lag Model assumes that the value of the dependent variable at
-one location is associated with the values of that variable in nearby
-locations. 'Nearby' is as defined by the weights matrix W (rook, queen,
-within a certain distance of one another). In other words, Spatial Lag
-Model includes the spatial lag of the dependent variable as a predictor.
-In this assignment, our equation for the Spatial Lag Model is as follow:
+The spatial lag model assumes that the value of the dependent variable
+at one location is associated with the values of that variable in nearby
+locations. "Nearby" is as defined by the weights matrix W (rook, queen,
+or within a certain distance of one another). In other words, the
+spatial lag model includes the spatial lag of the dependent variable as
+a predictor. In this assignment, our equation for the Spatial Lag Model
+is as follow:
 $$ LNMEDHVAL = ρWy\;+\;β_0\;+\;LNNBELPOVβ_1\;+\;PCTBACHMORβ_2\;+\;PCTSINGLESβ_3\;+\;PCTVACANTβ_4\;+\;ε $$
 Here, $ρ$ is the coefficient of the $y-lag$ variable $Wy$, just as $β_1$
-is the coefficient of the variable $LNNBELPOV$, and $ε$ is residual.
+is the coefficient of the variable $LNNBELPOV$, and $ε$ is the residual
+term.
+
+It may be help to consider spatial lag through the analogy of this Stats
+Wizard Penguin (SWP) and his Inept Companions (ICs): although the SWP
+may have a stats wizardry quotient (SWQ) of over 9,000, its spatial lag
+(i.e., the average value of the SWQs of its neighboring ICs) is 0
+because all the neighboring penguins know exactly 0 about statistics.
+(Crucially, we should use a symmetrical matrix of statistically
+incompetent penguins, as this is a key requirement of spatial lag and
+spatial error regressions).
+
+```{r tweet embed, echo = F}
+library(tweetrmd)
+
+tweetrmd::tweet_embed("https://twitter.com/schumacherbj/status/1584278266546130944",
+                      widget_type = "video")
+```
 
 ### Spatial Error Regression
 
-    iii.    Describe the method of spatial error regression in several sentences. 
-    1.  Present the model equation for the spatial error model. 
-    a.  Instead of writing X1…X4, write the names of the actual predictors that you’re using in this assignment (e.g., PCTVACANT)
-    b.  Explain what each term is (the β coefficients, λ, ε, u, etc)
-
-Spatial Error Model assumes that the residual at one location is
-associated with residuals at nearby locations. 'Nearby' is as defined by
-the weights matrix W (rook, queen, within a certain distance of one
-another). As for this, we take two-step regression. First, we run our
-OLS regression, where we regress Y on the predictors.
+The spatial error model assumes that the *residual* at one location is
+associated with *residuals* at nearby locations. "Nearby" is as defined
+by the weights matrix W (rook, queen, or within a certain distance of
+one another). This requires two steps: First, we run our OLS regression,
+where we regress Y on the predictors.
 $$ LNMEDHVAL = β_0\;+\;LNNBELPOVβ_1\;+\;PCTBACHMORβ_2\;+\;PCTSINGLESβ_3\;+\;PCTVACANTβ_4\;+\;ε $$
-Secondly, we regress residuals on the nearest neighbor residuals,
+Second, we regress the residuals on the nearest neighbor residuals,
 thereby filtering the spatial information out of the OLS residuals and
 decomposing the residuals $ε$ into two parts, one with a spatial pattern
 $λWε$ and one which is simply random noise $u$.
@@ -375,106 +349,90 @@ $$ LNMEDHVAL = β_0\;+\;LNNBELPOVβ_1\;+\;PCTBACHMORβ_2\;+\;PCTSINGLESβ_3\;+\;
 
 ### Assumptions for Spatial Lag and Error Regression
 
-    Indicate that the assumptions that are needed for OLS are still needed for both spatial lag and spatial error regression models (except that of spatial independence of observation
-
-As for the Spatial Regression model, we still have some of assumptions.
-First of all, the relationship between the independent variable and each
-of the dependent variables has to be always linear. The second
-assumption is that The normality of residuals, and there should not be
-multicollinearity.
+With both spatial lag and spatial error regression models, we still
+retain all of the assumptions of OLS *except for the spatial
+independence of observations.* The relationship between the independent
+variable and each of the dependent variables must still be, residuals
+must still be linear, and there should be no multicollinearity.
 
 ### Goals of Spatial Lag and Error Regression
 
-    State the goal of spatial lag and spatial error regression (i.e., what you hope will happen with regression residuals as a result of using these methods). 
-
-Goal of Spatial Regression is to take consideration the possibility of
-spatial dependency in the residuals. By using this method, we want to
-our model to be no longer spatially autocorrelated and less
-heteroscedasticity.
+The goal of spatial regression is to consider the possibility of spatial
+dependency in the residuals. By using this method, we want to remove
+spatially autocorrelation from our model and make our model less
+heteroscedastic.
 
 ### Regression Performance Compared
 
-    vi. Mention that you will compare the results of spatial lag regression with OLS and the results of spatial error regression with OLS, and will decide whether the spatial models perform better than OLS based a number of criteria. 
-    1.  These criteria include
-    a.  Akaike Information Criterion/Schwarz Criterion;
-    b.  Log Likelihood; 
-    c.  Likelihood Ratio Test
-    2.  Be sure to describe what each of the above criteria is, and how you decide which model is better based on this criterion (state any null/alternative hypotheses, if applicable).
+Various measures can be used to compare models. The first one is the
+Akaike Information Criterion and the Schwartz Criterion. These measure
+the goodness of fit of an estimated statistical model. They are relative
+measures of the information that is lost when a given model is used to
+describe reality, and they can be said to describe the trade-off between
+precision and complexity of the model. The equation of the AIC is the
+following: $$AIC = 2k - 2ln(\hat{L})$$ Given a set of candidate models
+for the data, the preferred model is the one with the lowest AIC value.
+Thus, the AIC rewards goodness of fit (as assessed by the likelihood
+function), but it also includes a penalty that is an increasing function
+of the number of estimated parameters. The penalty discourages
+overfitting, which is desired because increasing the number of
+parameters in the model almost always improves the goodness of fit.
 
-    3.  State that another way of comparing OLS results with spatial lag and spatial error results is by looking at the Moran’s I of regression residuals. 
-    a.  Indicate how you would decide which model is better based on this criterion.
-
-A number of measures that can be used for model comparability first one
-is Akaike Information Criterion (AIC) and Schwartz Criterion (SC). AIC
-and SC are measures of the goodness of fit of an estimated statistical
-model. They are relative measures of the information that is lost when a
-given model is used to describe reality and can be said to describe the
-trade-off between precision and complexity of the model. The equation of
-AIC is the following : $$AIC = 2k - 2ln(\hat{L})$$ Given a set of
-candidate models for the data, the preferred model is the one with the
-minimum AIC value. Thus, AIC rewards goodness of fit (as assessed by the
-likelihood function), but it also includes a penalty that is an
-increasing function of the number of estimated parameters. The penalty
-discourages overfitting, which is desired because increasing the number
-of parameters in the model almost always improves the goodness of the
-fit.
-
-Second option is to check Log likelihood, it is associated with the
+The second option is the log likelihood, which is associated with the
 maximum likelihood method of fitting a statistical model to the data and
-estimating model parameters. Maximum likelihood picks the values of the
-model parameters that make the data more likely than any other values of
-the parameters would make them. Thus, the higher the log likelihood, the
-better the model fit. This comparison Should be used for nested models
-only. OLS is a special case of spatial lag and spatial error models. So
-we can compare OLS with Spatial and spatial lag model, but we cannot use
-the log likelihood to compare spatial lad and spatial error because they
-are not a special case of each other.
+estimating model parameters. The maximum likelihood approach picks the
+values of the model parameters that make the data more likely than any
+other values of the parameters would make them. Thus, the higher the log
+likelihood, the better the model fit. This comparison should be used for
+nested models only. OLS is a special case of spatial lag and spatial
+error models. So we can compare the OLS model with the spatial lag and
+spatial error models, but we cannot use log likelihood to compare the
+spatial lag and spatial error models to each other because they are not
+a special case of each other.
 
-Also, Likelihood ratio test could be another tool for comparison OLS
-model with the spatial model. Null Hypothesis of this test is Spatial
-model is not a better specification than the OLS model. If p\<0.05, we
-reject the null hypothesis, and state that the spatial lag (error) model
-is doing a better job than the OLS model
+A likelihood ratio test is another tool to compare the OLS model to the
+spatial model. $H_0$ for this test is that the spatial model is not a
+better specification than the OLS model. If the p-value \< 0.05, we
+reject $H_0$ and state that the spatial lag (error) model is better than
+the OLS model.
 
-We can use Moran's I to figure out which model is better between OLS and
-spatial lag and spatial error. Firstly, run OLS regression and examine
-residuals for spatial autocorrelation (Moran's I). If there is no
-significant spatial autocorrelation in the residuals, stop. If there is
-significant spatial autocorrelation in residuals, we need to look at the
-the Lagrange Multiplier (lag) and the Lagrange Multiplier (error), which
-tells you whether you should run a spatial regression or spatial error
-model. First, look at If neither of LM is significant, then OLS is good
-enough. If Lagrange Multiplier (lag) is significant and Lagrange
-Multiplier (error) is not, then run the spatial lag model. If Lagrange
-Multiplier (error) is significant and Lagrange Multiplier (lag) is not,
-then run the spatial error model If both are significant (as here), look
-at Robust LM (lag) and Robust LM (error). Choose the one that is more
-significant, which has a lower p-value or higher test statistic value
-and run that model.
+We can use Moran's I to figure out which model is better between the OLS
+and spatial lag and spatial error models. First, we run OLS regression
+and examine the residuals for spatial autocorrelation (Moran's I). If
+there is no significant spatial autocorrelation in the residuals, we
+stop. If there is significant spatial autocorrelation in residuals, we
+need to look at the the Lagrange Multiplier (lag) and the Lagrange
+Multiplier (error), which tells us whether we should run a spatial
+regression or spatial error model. If neither Lagrange Multiplier is
+significant, then the OLS model is good enough. If the Lagrange
+Multiplier for the spatial lag model is significant and the Lagrange
+Multiplier for the spatial error model is not, then we run the spatial
+lag model. If the Lagrange Multiplier for the spatial error model is
+significant and Lagrange Multiplier for the spatial lag model is not,
+then we run the spatial error model. If both are significant (as in this
+assignment), we look at we look at the Robust LM for both the spatial
+lag and spatial error models. We choose the model which has a lower
+p-value or higher test statistic value and run that model.
 
 ## Geographically Weighted Regression
 
 ### Simpson's Paradox and Local Regression
 
-    Introduce GWR by talking about the concepts of Simpson’s paradox and local regression.
-
 Simpson's Paradox is a statistical phenomenon where an association
 between two variables in a population emerges, disappears or reverses
-when the population is divided into sub-populations. All of OLS
-Regression, Spatial Lag Regression Spatial Error Regression assume
-spatial stationarity that modeled relationships are constant across
-space. In spatial statistics, stationarity equals the homogeneity of an
-effect, or, that a process works the same regardless of where you
-observe the process, it is necessary assumption, but likely not true in
-practice. For example, higher home values might be correlated with
-higher crime rates in some locations and lower crime rates in some
-others. Geographically Weighted Regression is to separate area into
-multiple locations and conducting multiple local regression instead of
-having a single, global regression.
+when the population is divided into sub-populations. OLS regression,
+spatial lag regression, and spatial error regression assume spatial
+stationarity, i.e., that modeled relationships are constant across space. In
+spatial statistics, stationarity equals the homogeneity of an effect,
+or, that a process works the same regardless of where you observe the
+process; it is a necessary assumption, but likely not true in practice.
+For example, higher home values might be correlated with higher crime
+rates in some locations and lower crime rates in some others. The aim of
+geographically weighted regression is to separate area into multiple
+locations and conducting multiple local regression instead of having a
+single, global regression.
 
 ### GWR Equations
-
-    Present the GWR equations and explain them in your own words
 
 OLS models are run to determine the global regression coefficients($β$)
 for the independent variables is following:
@@ -483,7 +441,7 @@ $$y_i = β_0 + \displaystyle\sum_{k=1}^{n}{β_kx_{ik}} + ε_i$$
 where $y_i$ is the $ith$ observation of the dependent variable, $x_{ik}$
 is the $ith$ observation of the $kth$ independent variable, the $ε_i$s
 are independent normally distributed error terms with zero means, and
-each $β_k$ must be determined from a sample of n observations. Usually
+each $β_k$ must be determined from a sample of $n$ observations. Usually
 the least squares method is used to estimate the $β_n$s. Using matrix
 notation this may be expressed as follows:
 $$\hat{β} = (x^tx)^{-1}x^ty$$. where the independent observations are
@@ -495,12 +453,11 @@ variable.
 
 Once the independent variables that you wish to retain in the model are
 identified, and there is a theoretical basis for thinking that the
-relationships may differ by space, GWR may be an appropriate next step.
-The regression models that underlie GWR. GWR is a relatively simple
-technique that extends the traditional regression framework of equation
+relationships may differ by space, GWR may be an appropriate next step. GWR is a relatively simple
+technique that extends the traditional regression framework
 by allowing local variations in rates of change so that the coefficients
-in the model rather than being global estimates are specific to a
-location $i$. The regression equation is then:
+in the model are specific to a
+location $i$, rather than being global estimates. The regression equation is then:
 
 $$y_i = β_{i0} + \displaystyle\sum_{k=1}^{n}{β_{ik}x_{ik}} + ε_i$$ where
 $β_{ik}$ is the value of the $kth$ parameter at location $i$. Using a
@@ -518,28 +475,26 @@ $β_{ik}$ to be made that meets the criterion of "closeness of
 calibration points" set out above. Note that usually in weighted
 regression models the values of $w_i$ are constant, so that only one
 calibration has to be carried out to obtain a set of coefficient
-estimates, but in this case w varies with i so that a different
+estimates, but in this case $w$ varies with $i$ so that a different
 calibration exists for every point in the study area. In this case, the
 parameter estimation formula could be written more generally as
 $$\hat{β}_i = (x^tw_ix)^{-1}x^tw_iy$$
 
 ### Running Local Regression
 
-    Talk about how local regression is run
-
-First of all, we need multiple locations to run a regression, not just a
+We need multiple locations to run a regression, not just a
 single location. GWR uses other observations in the dataset to run the
 regression. Observations that are close to location $i$ are given
-greater weights. The weight of an observation varies with location $i$.
+greater weights. The weight of an observation varies with proximity to location $i$.
 Normally, observations that are closer to location $i$ have a stronger
 influence on the estimation of the parameters for location $i$.
 
 An initial step toward weighting based on locality might be to exclude
 from the model calibration observations that are further than some
-distance d from the locality. This would be equivalent to setting their
+distance $d$ from the locality. This would be equivalent to setting their
 weights to zero, giving a weighting function of
 $$w_{ij} = 1 \;\;\;\;\;\;\; if \;\;d_{ij} < d\\w_{ij} = 0 \;\;\;\;\;\;\; otherwise$$
-However, the spatial weighting function above suffers the problem of
+However, the spatial weighting function above suffers from
 discontinuity. As $i$ varies around the study area, the regression
 coefficients could change drastically as one sample point moves into or
 out of the circular buffer around $i$ and which defines the data to be
@@ -547,14 +502,10 @@ included in the calibration for location $i$.
 
 ### Bandwidth (Adaptive vs. Fixed)
 
-    Discuss the concept of bandwidth, and talk about adaptive vs. fixed bandwidth.
-    1.  State that here, you will be using adaptive bandwidth
-    a.  Explain why adaptive bandwidth is more appropriate in this problem than the fixed bandwidth
-
 There are a couple of ways to weight nearby locations considering the
 problem of discontinuity. Graphically, GWR involves fitting a spatial
 kernel to the data as described in the Figure 1. For a given regression
-point X, the weight (W) of a data point is at a maximum at the location
+point $X$, the weight $W$ of a data point is at a maximum at the location
 of the regression point. The weight decreases gradually as the distance
 between two points increases. A regression model is thus calibrated
 locally by moving the regression point across the area under study. For
@@ -595,49 +546,40 @@ varies across space.
 
 ### Assumptions in GWR
 
-    Mention that the OLS assumptions still hold in GWR.
-    1.  When mentioning multicollinearity, talk about the Condition Number, and the issues of multicollinearity/clustering in GWR.
-
-Many of Assumptions of OLS, normality of residuals, homoscedasticity, no
-multicollinearity and noramly distributed residuals are still needed to
-be holded in GWR. GWR builds a local regression equation for each
-feature in the dataset. When the value for an explanatory variable
-cluster spatially in a substantial way, you will very likely have a
-problem. That is, the variable tells the same story at every location.
-Also, you may have a problem with multicollinearity when you have two or
+Many of the assumptions in OLS--such as the normality of residuals, homoscedastiticty,
+the absence of multicollinearity, and the normal distribution of residuals--still
+need to be met for GWR. GWR builds a local regression equation for each feature in the dataset.
+When the value for an explanatory varially clusters spatially in a substantial way,
+we are still likely to have a problem. That is, the variable tells the same story
+at every location. We also may have a problem with multicollinearity when we have two or
 more variables that have similar patterns of clusters in a certain
-region. we may run into problems if we use two variables which both have
+region. Likewise, We may run into problems if we use two variables which both have
 very high (or very low) values at all locations in a certain part of the
 study region. The condition number in the attribute table indicates when
 results are unstable due to local multicollinearity. To check this
-issue, we can look through the Cond.Number field from GWR results
-attribute table, As a rule of thumb, it is likely to be
-multicollinearity issues where features with a condition number larger
-than 30; equal to Null; or equal to -1.7976931348623158e + 308.
+issue, we can look through the Cond.Number field from the GWR results
+attribute table, As a rule of thumb, 
+multicollinearity issues likely arise for features with a condition number larger
+than 30, equal to Null, or equal to -1.7976931348623158e + 308.
 
 ### GWR and P-Values
-
-    Indicate why p-values are not part of the GWR output.
 
 In a global model it is usual to test whether the parameter estimates
 are significantly different from zero. This can be accomplished with a
 t-test. The situation with GWR is a little more complex and is the
 subject of current research. As there is one set of parameters
 associated with each regression point, as well as one set of standard
-errors, then there are potentially thousands of tests that would be
+errors, there are potentially thousands of tests that would be
 required to determine whether parameters are locally significant. The
-assumption behind the tests mean that if the 0.05 significance level is
-used we would expect 5 tests in every hundred to be significant. With a
-5 variable model estimated at 20000 regression points, we would expect
-5000 of these tests to return a significant result. This is the problem
+assumption behind the tests means that if the 0.05 significance level is
+used, we would expect 5 tests in every 100 to be significant. With a
+5 variable model estimated at 20,000 regression points, we would expect
+5,000 of these tests to return a significant result. This is the problem
 raised by multiple testing.
-
-##-----------------------------min------------------------------------------------------------------------------------------##
 
 ## Tools
 
--   List packages for spatial lag & spatial error
--   List packages for GWR
+In our assignment, we rely on the usual `tidyverse`, `sf`, and `tmap` packages in R. We also incorporate a number of spatial packages such as `sp`, `rgdal`, and `rgeos`. Most of our spatial regression work relies on `spdep` and `spgwr`. Importantly, we use the [recently-released `sfdep` package](https://sfdep.josiahparry.com/), which is basically a `tidy` version of the `spdep` package and allows us to incorporate `sf` objects. Finally, we use `lmtest`, `whitestrap`, and `tseries` for the Breusch-Pagan, White, and Jarque-Bera tests respectively.
 
 ```{r, include=F}
 
@@ -669,7 +611,7 @@ library(spdep) #for spatial lag + error reg
 library(spgwr) # for geographically weighted reg
 library(spatialreg) #for spatial lag + error reg (alt)
 library(GWmodel) # for geographically weighted reg (alt)
-#library(tweetrmd) # to embed a tweet
+library(tweetrmd) # to embed a tweet
 library(sfdep) # for sf replacement of spdep
 library(lmtest) #for breusch pagan test
 library(whitestrap) # for white test
@@ -687,7 +629,7 @@ initial data that we need for our analysis.
 #reg_data = st_read('C:/Users/Nissim/Desktop/Fall 2022/Spat Stats/musa-500-hmwk-2/reg_data_files/Regression Data.shp')
 
 #Min
-reg_data = read_sf('C:/Users/vestalk/Desktop/00_Upenn/20.Fall/03.MUSA 5000 Spatial Statistics and Data Analysis/Assignment/HW1/RegressionData.shp')
+reg_data = read_sf('C:/Users/Nissim/Desktop/Fall 2022/Spat Stats/musa-500-hmwk-2/data/Regression Data.shp')
 
 #define a function to find zero values in columns
 
@@ -740,19 +682,13 @@ tm_shape(reg_data) +
 
 ### Global Moran's I
 
-Present and describe the global Moran's I value and the random
-permutations test results.
+Below, we calculate a global Moran's I value and analyze it using a Monte Carlo approach,
+which compares our calculated Moran's I to 999 random permutations.
 
-Here, we'll prepare a weight matrix based on Queen neighbors.[^4] We can
-do this using the `spdep` package; `spdep::poly2nd` produces neighboring
-relations and then `spdep::nb2listw` converts them to a weight matrix.
+First, we'll prepare a weight matrix based on Queen neighbors.[^4]
 
 [^4]: This analysis is based on [Data Analysis and Visualization with
     R:Spatial (2022)](http://www.geo.hunter.cuny.edu/~ssun/R-Spatial/)
-
-Here we're using the `sfdep` package (rather than `spdep`), as we prefer
-working with `sf` objects to `sp` objects. Documentation is [available
-here](https://sfdep.josiahparry.com/).
 
 ```{r queen weights}
 
@@ -770,7 +706,7 @@ summary(reg_data$nb)
 ```
 
 We can visualize the connections between neighbors based on the weight
-matrix that we've connected. Here's what they look like:
+matrix that we've connected:
 
 ```{r global moran map}
 reg_data_lines = nb2lines(reg_data$nb, 
@@ -800,14 +736,12 @@ global_moran(reg_data$ln_med_h_val, reg_data$nb, reg_data$weights)$`I`
 Having calculated a global Moran's I, we'll use a Monte Carlo approach
 to test whether our global Moran's I is statistically significant. If
 the null hypothesis is true, then the probability of drawing the
-observed data is the same as any other permutation of the zi's amongst
-the polygons. Thus, if m just the number if simulated Moran's-I values
-exceeding the observed one, and M is the total number of simulations,
-then the probability of getting the observed Moran's-I
+observed data is the same as any other permutation of the $i$'s amongst
+the polygons. Thus, if $m$ is the number of simulated Moran's I values
+exceeding the observed one, and $M$ is the total number of simulations,
+then the probability of getting the observed Moran's I or greater is
 
-or a greater one is
-
-$p = m+1 / M+1$
+$$p = \frac{m+1}{M+1}$$
 
 ```{r global moran test}
 
@@ -842,7 +776,7 @@ ggplot(moranMCres) +
 ```
 
 Additional confirmation of the significance of our Moran's I value can
-be found by plotting the relationship between ln_med_h\_val of the block
+be found by plotting the relationship between ln_med_h_val of the block
 groups and their neighbors. If there were no relationship between block
 group observations and those of their neighbors, we would not see a
 clear pattern in the plot below. However, we observe that this is not
@@ -858,15 +792,10 @@ moran.plot(reg_data$ln_med_h_val, nb2listw(reg_data$nb),
 
 The `local_moran` function in `sfdep` allows us to compute LISA
 statistics for each block group. This function generates the Local Moran
-statistic as `Ii`. We might also be interested in `Var.Ii`, which tells
+statistic as `ii`. We might also be interested in `var_ii`, which tells
 us how much each block group's Local Moran Statistic varies from the
-global mean, and $Pr(z>0)$, which indicates whether the Local Moran
+global mean, and `p_ii`, which indicates whether the Local Moran
 Statistic can be considered statistically significant.
-
-For Local Moran's I results, present the Significance Map and Cluster
-Map obtained by running the Local Morans' I. 1. Discuss the results:
-what are the not significant, high-high, high-low, low-high and low-low
-areas on the Cluster Map? Where in the city are these areas?
 
 ```{r local moran}
 # Local Moran's I
@@ -879,7 +808,9 @@ head(lisa)
 ```
 
 Now we can examine the local Moran's I values to see if there is
-significant spatial autocorrelation.
+significant spatial autocorrelation. Mapping the p-values that we've just
+calculated, it appears that we have statistically significant (p \< 0.05)
+clustering in parts of northwest, northeast, north, and west Philadelphia.
 
 ```{r local moran map}
 # first we need to bind the lisa dataframe to our reg_data dataframe
@@ -897,8 +828,15 @@ tm_shape(reg_data) +
   tm_layout(frame = FALSE, main.title = "P-Value")
 ```
 
-We can also visualize whether the LISA statistics suggest high or low
-clustering. [Ugh, fix this wording plz.]
+We can now visualize statistically significant clustering throughout the city,
+which the local Moran's I calculation groups into High-High, High-Low, Low-High,
+and Low-Low clusters. (We will also exclude clusters for which p \> 0.05.)
+
+Based on our map, it appears that there are significant High-High clusters in
+northwest and northeast Philadelphia, as well as some small neighborhoods near
+Old City, along City Line Avenue, and near the Navy Yard in south Philadelphia.
+Significant Low-Low clusters are also found in North Philadelphia, parts of West
+Philadelphia, and small scattered sites near Grays Ferry.
 
 ```{r local moran clustering}
 reg_data = reg_data |>
@@ -921,30 +859,16 @@ tm_shape(reg_data) +
 
 ## OLS Regression and Assumptions
 
-### OLS Output
+### OLS Output {#ols-output}
 
-i.  Present the OLS output from GeoDa (call this Table 1)
+Our model regressed the log of median house values (ln_med_h_val) on four predictors, namely,
 
-<!-- -->
+ 1) the percents of individual with bachelor’s degrees or higher (PCBACHMORE),
+ 2) the number of households living below the poverty line (LNNBELPOV),
+ 3) the percent of vacant houses (PCTVACANT), and
+ 4) the percent of single houses units (PCTSINGLES).
 
-1.  Give a brief 2 sentence overview of the OLS results (feel free to
-    paste this from your description in HW 1). That is, simply indicate
-    which predictors are significant and what % of variance in LNMEDHVAL
-    has been explained by the model.
-2.  Comment on the results of the tests on heteroscedasticity
-
-<!-- -->
-
-a.  Are the results from the 3 tests consistent with each other?
-b.  Do they indicate a problem with heteroscedasticity?
-
-<!-- -->
-
-3.  Comment on the results of the test on normality of errors
-
-<!-- -->
-
-a.  Do test results indicate a problem with normality?
+The output of our OLS regression indicates that all four predictors are statistically significant; the p-value for the F-statistic is less than 0.05, as are the individual p-values for each predictor. Additionally, our OLS model explains more than 60% of the variance of LNMEDHVAL ($R^2$ is 0.6623 and the Adjusted $R^2$ is 0.6615). LNNBELPOV and PCTVACANT are negatively associated with LNMEDHVAL, while PCTBACHMOR and PCTSINGLES are positively associated with LNMEDHVAL.
 
 ```{r ols}
 # OLS Regression
@@ -954,7 +878,7 @@ reg = lm(formula=ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCT
 summary(reg)
 ```
 
-Here we run a log likelihood test.
+In order to compare our OLS model to the other models generated later in this assignment, we will run a log likelihood test. We will return to these results later.
 
 ```{r log liklihood}
 logLik(reg)
@@ -981,35 +905,44 @@ bptest(reg, studentize = TRUE)
 white_test(reg)
 ```
 
+In all three cases, p \< 0.05, indicating a problem with heteroscedasticity in our data.
+
 Finally, we will run the Jarque-Bera test to assess whether the
-residuals of our regression are normal.
+residuals of our regression are normal. Here, too, p \< 0.05, indicating that our residuals are not normally distributed.
 
 ```{r jb test}
 jarque.bera.test(reg$residuals)
 ```
 
-### Scatterplot of Residuals
+### Scatterplot of Residuals {#scatterplot-of-residuals}
 
-ii. Present the scatterplot of OLS_RESIDU by WT_RESIDU and describe the
-    results.
+Here, we'll generate standardized residuals, which are OLS Model
+residuals divided by an estimate of their standard deviation. We can evaluate these standardized residuals to consider spatial autocorrelation in our OLS model by comparing them to their spatial lag.
 
-<!-- -->
+First, we plot standardized residuals against the spatially lagged residuals. We see strong correlation, which is confirmed by the output of the linear model: $\rho$ (the slope of our linear model in the plot) is 0.732, indicating strong spatial autocorrelation in our OLS model.
 
-1.  Are the results (based on the value and significance level of ρ --
-    that's referred to as Slope b in the results) indicative of
-    significant spatial autocorrelation?
-
-Now, let's generate standardized residuals, which are OLS Model
-residuals divided by an estimate of their standard deviation, and map
-them.
-
-```{r ols resids}
+```{r ols resids scatter}
 reg_data = reg_data |>
               mutate(stand_resids = rstandard(reg),
                      spatial_lag = st_lag(stand_resids, 
                                              nb, 
                                              weights))
 
+ggplot(reg_data, aes(x = spatial_lag, y = stand_resids)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = 'lm') +
+  labs(x = "Spatial Lag of Residuals",
+       y = "Standardized Residuals") +
+  theme_minimal() +
+  theme(aspect.ratio = 1)
+```
+```{r ols resids lm}
+lm(formula =  stand_resids ~ spatial_lag, data = reg_data)
+```
+
+Further confirmation of this comes from mapping our standardized residuals, which appear to cluster in northwest, northeast, and north Philadelphia, as well as possibly downtown.
+
+```{r ols resids}
 tm_shape(reg_data)+
   tm_fill(col = 'stand_resids', 
           style = 'quantile', 
@@ -1021,9 +954,9 @@ tm_shape(reg_data)+
 ```
 
 However, a visual assessment is not sufficient, and we will test the
-presence of spatial autocorrelation in two ways: 1) by regressing
-residuals on their queen neighbors, and 2) by looking at the Moran's I
-of the residuals.
+presence of spatial autocorrelation in two ways: 
+ 1) by regressing residuals on their queen neighbors, and 
+ 2) by looking at the Moran's I of the residuals.
 
 First, let's regress the OLS standardized residuals on the spatial lag
 of the OLS residuals (i.e., OLS residuals at the queen neighbors).
@@ -1044,12 +977,12 @@ global_moran_perm(reg_data$stand_resids, reg_data$nb, reg_data$weights, alternat
 ```
 
 It is strongly apparent that spatial autocorrelation exists among the
-regression residuals of the OLS Model. The p-value is very small
+regression residuals of the OLS Model. The p-value is very small,
 indicating that Moran's I is significant. Because there's clearly
-spatial autocorrelation in OLS residuals, the OLS Model is inappropriate
-and we need to consider another method. Here, we will attempt to run the
-Spatial Lag Model, the Spatial Error Model, and Geographically Weighted
-Regression.
+spatial autocorrelation in our OLS residuals, the OLS Model is inappropriate
+and we need to consider another method. Next, we will attempt to run the
+spatial lag model, the spatial error model, and geographically weighted
+regression.
 
 ```{r stand resids scatter}
 moran.plot(reg_data$stand_resids, nb2listw(reg_data$nb),
@@ -1059,7 +992,7 @@ moran.plot(reg_data$stand_resids, nb2listw(reg_data$nb),
 
 ## Spatial Lag and Spatial Error Regression
 
-### Spatial Lag Regression Results
+### Spatial Lag Regression Results {#spatial-lag-regression-results}
 
 i.  Present results of Spatial Lag regression (call this Table 2)
 
@@ -1083,21 +1016,20 @@ a.  Compare these results to OLS results.
     on the Akaike Information Criterion/Schwarz Criterion, the Log
     Likelihood, and the Likelihood Ratio Test.
 
+Here we have generated a spatial lag regression model and summarized the output. The coefficient of spatial lag
+$\rho = 0.65$ and is significant (p \< 0.05), indicating that a one unit increase in the spatial lag of LNMEDHVAL
+is associated with a 0.65 unit increase in LNMEDHVAL at a given location. Furthermore, as in our OLS model,
+all four of our predictors have p \< 0.05, meaning that they are significant. 
 ```{r spatial lag}
 spatial_lag_reg = lagsarlm(formula = ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))
 
 sumslr = summary(spatial_lag_reg)
-```
 
-As with our OLS before, we will calculate the likelihood ratio for our
-spatial lag model.
-
-```{r likelihood ratio}
-LR.Sarlm(spatial_lag_reg, reg) #Here lagreg is the SL output; reg is the OLS output
+sumslr
 ```
 
 To test for heteroscedasticity, we will once again run two of the three
-tests run above:
+tests run above. In both cases, p \< 0.05, indicating problems with heteroscedasticity in our spatial lag model.
 
 1)  the Breusch-Pagan test
 
@@ -1112,12 +1044,14 @@ bptest.Sarlm(spatial_lag_reg, studentize = FALSE)
 bptest.Sarlm(spatial_lag_reg, studentize = TRUE)
 ```
 
-And, again, the Jarque-Bera test to assess whether the residuals of our
-regression are normal.
+Likewise, we again run the Jarque-Bera test to assess whether the residuals of our
+regression are normal. Here, too, p \< 0.05, indicating an non-normality in the distribution of the residuals of our spatial lag model.
 
 ```{r jb test lag reg}
 jarque.bera.test(spatial_lag_reg$residuals)
 ```
+
+Next, we will consider spatial autocorrelation in our model. Visually, it appears that the residuals from our spatial lag model show less autocorrelation than in our OLS model.
 
 ```{r spatial lag stnad resids map}
 reg_data = reg_data |>
@@ -1134,6 +1068,8 @@ tm_shape(reg_data)+
   tm_layout(frame = FALSE)
 ```
 
+Running a Monte Carlo simulation for the global Moran's I of the spatial lag residuals, 
+
 ```{r spatial lag stand resids mc}
 global_moran_perm(spatial_lag_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)
 ```
@@ -1148,6 +1084,23 @@ global_moran_perm(spatial_lag_reg$residuals, reg_data$nb, reg_data$weights, alte
 
 # once again, run moran's I for the spatial lag residuals; test w 999 permutations
 # print scatterplot & summary table of significance test
+```
+
+Lastly, we can compare our spatial lag model to the previous OLS model using both the log likelihood ratio and the AIC.
+
+The log likelihood of our spatial lag model is higher, and the 
+
+Additionally, using the likelihood ratio stest, we can see that the p-value \< 0.05, so we can reject $H_0$ and state that the spatial lag model is better than the OLS model.
+```{r likelihood ratio}
+LR.Sarlm(spatial_lag_reg, reg) #Here lagreg is the SL output; reg is the OLS output
+```
+
+```
+```
+
+```
+stepAIC(reg)$anova$AIC,
+        spatial_lag_reg$AIC_lm.model,
 ```
 
 ### Spatial Error Regression Results
@@ -1565,10 +1518,17 @@ tmap_arrange(gwr_coef_ln_n_bel_pov_100,
 
 # Discussion
 
-In this project, we used three approaches in creating model other than OLS, including spatial lag, spatial error, and geographically weighted regression (GWR), to check whether they can better account for spatial auto-correlation than OLS.
+In this project, we used three approaches in creating model other than
+OLS, including spatial lag, spatial error, and geographically weighted
+regression (GWR), to check whether they can better account for spatial
+autocorrelation than OLS.
 
-Based on the results indicated in the 'model comparison' section above, GWR is the best out of the four regression methods, not only because it has a high $R^2$ value than OLS but also because it has an Moran's I that is closer to 0 out of the four and lower AIC than spatial error or spatial lag. Such results suggest that GWR is overall a better model with better ability to account for spatial auto-correlation. 
-
+Based on the results indicated in the 'model comparison' section above,
+GWR is the best out of the four regression methods, not only because it
+has a high $R^2$ value than OLS but also because it has an Moran's I
+that is closer to 0 out of the four and lower AIC than spatial error or
+spatial lag. Such results suggest that GWR is overall a better model
+with better ability to account for spatial autocorrelation.
 
 b)  Give a brief description of the limitations (i.e., which assumptions
     were not met).
