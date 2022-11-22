@@ -665,7 +665,7 @@ reg_data = reg_data |>
 ### Distribution of Median House Value
 
 The map below displays the spatial distribution of median house value by
-census tract in Philadelphia.
+census tract in Philadelphia. As a starting point, this map offers us an overview of (log of) median house values in the city. We can observe a clustering of higher values in the north-east and north-west of the city and a clustering of lower values in the center to north part. Statistical tests are applied to further explore such phenomena and results are presented as following. 
 
 ```{r medhval choro}
 tmap_mode("plot")
