@@ -629,7 +629,8 @@ initial data that we need for our analysis.
 #reg_data = st_read('C:/Users/Nissim/Desktop/Fall 2022/Spat Stats/musa-500-hmwk-2/reg_data_files/Regression Data.shp')
 
 #Min
-reg_data = read_sf('C:/Users/Nissim/Desktop/Fall 2022/Spat Stats/musa-500-hmwk-2/data/Regression Data.shp')
+
+#Ann: reg_data = st_read(file.path("/Users/annzhang/Downloads/reg_data_2/Regression Data.shp"))
 
 #define a function to find zero values in columns
 
@@ -689,14 +690,12 @@ First, we'll prepare a weight matrix based on Queen neighbors.[^4]
 
 [^4]: This analysis is based on [Data Analysis and Visualization with
     R:Spatial (2022)](http://www.geo.hunter.cuny.edu/~ssun/R-Spatial/)
+    
+    
+The results of Global Moran’s I is indicated below, followed by a histogram. According to the results and the histogram (as indicated by the red line), the Global Moran’s I value is 0.79, with a pseudo p-value < 0.05. The results suggest that log median house value (LNMEDHVAL) is significantly spatially autocorrelated. 
 
 ```{r queen weights}
 
-# create our queen weight matrix
-# reg_data_nb = reg_data |>
-        #              spdep::poly2nb(row.names = reg_data$POLY_ID)
-
-# grab geometry
 reg_data = reg_data |>
               mutate(nb_geom = st_geometry(reg_data), #geoms for poly2nb
                      nb = st_contiguity(nb_geom), # generate neighbors
@@ -832,11 +831,8 @@ We can now visualize statistically significant clustering throughout the city,
 which the local Moran's I calculation groups into High-High, High-Low, Low-High,
 and Low-Low clusters. (We will also exclude clusters for which p \> 0.05.)
 
-Based on our map, it appears that there are significant High-High clusters in
-northwest and northeast Philadelphia, as well as some small neighborhoods near
-Old City, along City Line Avenue, and near the Navy Yard in south Philadelphia.
-Significant Low-Low clusters are also found in North Philadelphia, parts of West
-Philadelphia, and small scattered sites near Grays Ferry.
+Based on our map, it appears that there are significant High-High (high house values observed in neighboring areas) clusters in northwest and northeast Philadelphia, as well as some small neighborhoods near Old City, along City Line Avenue, and near the Navy Yard in south Philadelphia.
+Significant Low-Low clusters (low house values observed in neighboring areas). are also found in North Philadelphia, parts of West Philadelphia, and small scattered sites near Grays Ferry.
 
 ```{r local moran clustering}
 reg_data = reg_data |>
@@ -994,32 +990,9 @@ moran.plot(reg_data$stand_resids, nb2listw(reg_data$nb),
 
 ### Spatial Lag Regression Results {#spatial-lag-regression-results}
 
-i.  Present results of Spatial Lag regression (call this Table 2)
 
-<!-- -->
+Here we have generated a spatial lag regression model and summarized the output. The coefficient of spatial lag $\rho = 0.65$ and is significant (p \< 0.05). The significance of this coefficient indicates an association between the median house value at one location and values of houses in the surrounding areas –– 1 unit increase in surrounding household values is associated with 0.65 unit increase in housing value at a particular location. Furthermore, in alignment with results from our OLS model, all four of our explanatory variables (i.e., PCTBACHMOR, PCTSINGLES, PCTVACANT, and ln_n_bel_pov_100,) have p \< 0.05, meaning that they are significant. 
 
-1.  Talk about the W_LNMEDHVAL term in the spatial lag regression
-    output. State whether it is significant, and how the results can be
-    interpreted.
-2.  Are the remaining terms (i.e., the predictors LNNBELPOV, PCTBACHMOR,
-    PCTSINGLES, and PCTVACANT) in the model significant?
-
-<!-- -->
-
-a.  Compare these results to OLS results.
-
-<!-- -->
-
-3.  State whether, based on the Breusch-Pagan test, the spatial lag
-    regression residuals are still heteroscedastic.
-4.  Compare the Spatial Lag regression and OLS regression models based
-    on the Akaike Information Criterion/Schwarz Criterion, the Log
-    Likelihood, and the Likelihood Ratio Test.
-
-Here we have generated a spatial lag regression model and summarized the output. The coefficient of spatial lag
-$\rho = 0.65$ and is significant (p \< 0.05), indicating that a one unit increase in the spatial lag of LNMEDHVAL
-is associated with a 0.65 unit increase in LNMEDHVAL at a given location. Furthermore, as in our OLS model,
-all four of our predictors have p \< 0.05, meaning that they are significant. 
 ```{r spatial lag}
 spatial_lag_reg = lagsarlm(formula = ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCTVACANT, data = reg_data, nb2listw(reg_data$nb))
 
@@ -1084,6 +1057,7 @@ global_moran_perm(spatial_lag_reg$residuals, reg_data$nb, reg_data$weights, alte
 
 # once again, run moran's I for the spatial lag residuals; test w 999 permutations
 # print scatterplot & summary table of significance test
+
 ```
 
 Lastly, we can compare our spatial lag model to the previous OLS model using both the log likelihood ratio and the AIC.
