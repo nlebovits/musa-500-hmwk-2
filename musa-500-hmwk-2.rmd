@@ -1520,8 +1520,7 @@ that is closer to 0 out of the four and lower AIC than spatial error or
 spatial lag. Such results suggest that GWR is overall a better model
 with better ability to account for spatial autocorrelation.
 
-b)  Give a brief description of the limitations (i.e., which assumptions
-    were not met).
+Although the GWR model has the best performance among all four regression models, there are some limitations, including problem of heteroscedasticity and potential local multicollinearity. Based on the significant results of Breusch-Pagan Tests, all four models faces potential heteroscedasticity, including GWR model. In addition, 
 
 # Citations
 
