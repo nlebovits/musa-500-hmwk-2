@@ -1153,6 +1153,9 @@ tests run above:
 bptest.Sarlm(spatial_error_reg, studentize = FALSE)
 ```
 
+
+Based on the results of Breusch-Pagan test, since $p < 0.05$, the spatial lag regression residuals are still heteroscedastic. 
+
 2)  the Koenker-Bassett test (also known as the Studentized
     Breusch-Pagan test)
 
@@ -1167,9 +1170,6 @@ regression are normal.
 ```{r jb test error reg}
 jarque.bera.test(spatial_error_reg$residuals)
 ```
-
-
-Based on the results of Breusch-Pagan test, since $p < 0.05$, the spatial lag regression residuals are still heteroscedastic. 
 
 
 
@@ -1195,9 +1195,7 @@ tm_shape(reg_data)+
 global_moran_perm(spatial_error_reg$residuals, reg_data$nb, reg_data$weights, alternative = "two.sided", 999)
 ```
 
-5.  Present the Moran's I scatterplot of spatial error regression
-    residuals. Does there seem to be less spatial autocorrelation in
-    these residuals than in OLS residuals?
+Moran’s I scatter plot of Spatial Error Regression residuals is presented as below. In comparison to the scatter plot of OLS Regression earlier, the Moran’s I seems closer to 0 in Spatial Error Regression, which indicates less spatial autocorrelation in residuals than OLS Regression. 
     
 ```{r spatial error moran}
 
@@ -1212,16 +1210,7 @@ moran.plot(reg_data$spatial_error_resids, nb2listw(reg_data$nb),
 
 ### Spatial Lag vs. Spatial Error
 
-<!-- need writing-->
-Compare the Spatial Lag and Spatial Error results with each other 
-1.
-Recall that you should not be using the likelihood-ratio test for this
-because the models are not nested (i.e., neither method is a special
-subtype of each other). However, it is OK to compare the two non-nested
-models, such as spatial lag and spatial error, based on Akaike
-Information Criterion and the Schwarz Information Criterion. a. Which
-model has better (lower) Akaike Information Criterion and Schwarz
-Information Criterion values?
+To compare Spatial Lag Regression and Spatial Error Regression, since neither of the methods is a special case of the other), instead of using likelihood-ratio test, we should look at the Akaike Information Criterion. As the results from both regression reflects, Spatial Lag has a lower AIC (525.57) than Spatial Error (759.47), suggesting Spatial Lag being the better model. More comparison with other regression models will be covered in a later section 'Model Comparison.'
 
 
 ## Geographically Weighted Regression
@@ -1299,9 +1288,8 @@ We can check AIC values to compare the performance of the model, the typical OLS
 
 ### Moran's I Scatterplot of GWR Residuals
 
-ii. Present the Moran's I scatterplot of GWR residuals. Does there seem
-    to be less spatial autocorrelation in these residuals than in OLS
-    residuals? What about the Spatial Lag and Spatial Error Residuals.
+Moran’s I scatter plot of GWR residuals is presented as below. The Moran’s I seems closer to 0 here than OLS Regression, Spatial Lag, or Spatial Error, which indicates less spatial autocorrelation in GWR residuals than residuals in other three models. 
+
 
 ```{r gwr moran}
 moran.plot(reg_data$gwr_adapt_resids, nb2listw(reg_data$nb),
@@ -1313,11 +1301,13 @@ moran.plot(reg_data$gwr_adapt_resids, nb2listw(reg_data$nb),
 
 ### Local GWR Results
 
+Local GWR is key to provide insight on relationship between the dependent variable and  explanatory variables specific to certain locations. 
+
 ```{r local gwr summary}
 summary(gwrmodel_adaptive$SDF)
 ```
 
-We can also map the standardized coefficients. The higher the absolute
+Here we have mapped the standardized coefficients. The higher the absolute
 value of the ratio between the coefficient and the standard error, the
 more plausible it is that the relationship between the predictor and the
 dependent variable is significant at the location.
@@ -1390,6 +1380,8 @@ tm_shape(reg_data)+
   main.title = 'Local R Squared')
 ```
 
+Based on this map, we can see an uneven distribution of $R^2$ value across the city -- with parts in north west Philly having very high value and some areas north to the center city having very low $R^2$ value. 
+
 ### Local GWR Residuals Results
 
 ```{r gwr resids}
@@ -1406,18 +1398,7 @@ tm_shape(reg_data)+
 
 ## Model Comparison
 
-We can do the following to compare all 4 models: 1. Look at the Moran's
-I of the residuals from each model and choose the model with the lowest
-(absolute) Moran's I 2. Compare the AIC values from each model and
-choose the model with the lowest value In addition, we can do the
-following to compare the Spatial Lag Model to OLS: 1. Compare the log
-likelihoods; the model with the higher value is the better one. 2.
-Examine the results of the likelihood ratio test; if it's significant,
-the Spatial Lag Model is better than OLS. In addition, we can do the
-following to compare the Spatial Error Model to OLS: 1. Compare the log
-likelihoods; the model with the higher value is the better one. 2.
-Examine the results of the likelihood ratio test; if it's significant,
-the Spatial Error Model is better than OLS.
+As mentioned in sections above, Spatial Lag and Spatial Error are respectively better than OLS. In addition, the following table is informative for comparisons across four models tested in this project. Firstly, by comparing the Moran's I value, we can see that GWR has the value closest to 0 (0.033) followed by Spatial Lag, Spatial Error, and OLS. Similarly, by comparing AIC, GWR has the lowest AIC (308.8), followed by Spatial Lag, Spatial Error, and OLS Regression. In addition, by comparing $R^2$ of OLS and GWR, GWR has higher  $R^2$, suggesting that GWR is better at accounting for variables. Overall, GWR is the best among four models. 
 
 Note that the global R\^2 for our GWR here is not exactly the same as in
 the actual function output; we're calculating it [based on the source
@@ -1471,21 +1452,6 @@ table_out = comp |>
 #print output
 table_out
 ```
-
-Eugene says: "Lastly, we can also do the following to compare GWR to
-OLS: 1. Compare the R2 from OLS with the Quasi-global R2 from GWR; the
-model with the higher value is the better one. 2. Examine whether
-there's spatial variability in standardized coefficients or local R2
-values. If there is, it might mean that a single global regression might
-not capture the varying spatial relationships between the dependent
-variable and the predictors."
-
-However, I don't think means that for #2 we can look at *local* $R^2$ or
-coefficients, because I don't think those exist for an OLS model---only
-for a spatial model. We should ask about this, though.
-
-I also cannot figure out why that last map isn't rendering right. It
-does in mapview!
 
 ```{r ols vs gwr map}
 gwr_local_r2 = tm_shape(reg_data)+
