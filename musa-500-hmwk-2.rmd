@@ -641,7 +641,8 @@ initial data that we need for our analysis.
 #Min 
 reg_data = st_read("C:/Users/vestalk/Desktop/00_Upenn/20.Fall/03.MUSA 5000 Spatial Statistics and Data Analysis/Assignment/HW2/Project/00.221025/musa-500-hmwk-2/data")
 
-#Ann: reg_data = st_read(file.path("/Users/annzhang/Downloads/reg_data_2/Regression Data.shp"))
+#Ann: 
+reg_data = st_read(file.path("/Users/annzhang/Downloads/reg_data_2/Regression Data.shp"))
 
 #define a function to find zero values in columns
 
@@ -1124,6 +1125,10 @@ global_moran_perm(spatial_lag_reg$residuals, reg_data$nb, reg_data$weights, alte
     
 ### Spatial Error Regression Results
 
+According to the results of Spatial Error Regression shown as below, he coefficient of the spatial parameter, $lambda$ =  0.81, at $p < 0.001$, showing its significance. Similar to $rho$ in Spatial Lag Regression, positive significant $lambda$ indicates spatial autocorrelation in the error. 
+
+Same as the result for OLS Regression, the four explanatory factors in the model (ln_n_bel_pov_100, PCTBACHMOR, PCTSINGLES, and PCTVACANT) all appears to remain significant at $p < 0.001$. 
+
 ```{r spatial error}
 spatial_error_reg = errorsarlm(formula = ln_med_h_val ~ ln_n_bel_pov_100 + PCTBACHMOR + PCTSINGLES + PCTVACANT, 
                                data = reg_data, 
@@ -1131,20 +1136,6 @@ spatial_error_reg = errorsarlm(formula = ln_med_h_val ~ ln_n_bel_pov_100 + PCTBA
 
 summary(spatial_error_reg)
 ```
-
-<!-- need writing spatial error regression part-->
-
-1. Talk about the LAMBDA term in the spatial lag regression output. State
-whether it is significant, and how the results can be interpreted. 
-
-2.Are the remaining terms (i.e., the predictors LNNBELPOV, PCTBACHMOR,
-PCTSINGLES, and PCTVACANT) in the model significant? a. Compare these
-results to OLS results. 
-
-3. State whether, based on the Breusch-Pagan test, the spatial lag regression residuals are still heteroscedastic? 4.
-Compare the Spatial Error regression and OLS regression based on the
-Akaike Information Criterion/Schwarz Criterion, the Log Likelihood, and
-the Likelihood Ratio Test.
 
 As with our OLS before, we will calculate the likelihood ratio for our
 spatial lag model.
@@ -1169,12 +1160,19 @@ bptest.Sarlm(spatial_error_reg, studentize = FALSE)
 bptest.Sarlm(spatial_error_reg, studentize = TRUE)
 ```
 
+
 And, again, the Jarque-Bera test to assess whether the residuals of our
 regression are normal.
 
 ```{r jb test error reg}
 jarque.bera.test(spatial_error_reg$residuals)
 ```
+
+
+Based on the results of Breusch-Pagan test, since $p < 0.05$, the spatial lag regression residuals are still heteroscedastic. 
+
+
+
 
 ```{r spatial error stnad resids map}
 reg_data = reg_data |>
@@ -1215,7 +1213,8 @@ moran.plot(reg_data$spatial_error_resids, nb2listw(reg_data$nb),
 ### Spatial Lag vs. Spatial Error
 
 <!-- need writing-->
-Compare the Spatial Lag and Spatial Error results with each other 1.
+Compare the Spatial Lag and Spatial Error results with each other 
+1.
 Recall that you should not be using the likelihood-ratio test for this
 because the models are not nested (i.e., neither method is a special
 subtype of each other). However, it is OK to compare the two non-nested
